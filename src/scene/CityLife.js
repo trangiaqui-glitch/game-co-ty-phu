@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mat, GEO, part, glass, gold } from './ModelFactory.js';
 import { facadeMaterial, stoneMaterial, roofMaterial, woodMaterial } from './Materials.js';
+import { LANDMARKS } from './CityLandmarks.js';
 
 // ---------------------------------------------------------------------------
 // Thành phố sống động ở giữa bàn cờ: các khối nhà nhiều tầng đủ màu (ban công,
@@ -54,11 +55,11 @@ function rooftop(g, y, w, d, rand, { solar = false } = {}) {
 }
 
 const PALETTES = [
-  { wall: '#F4D9A8', trim: '#C0392B', win: '#9ad8ff', balc: '#E67E22' },
-  { wall: '#E8A9A0', trim: '#7D3C98', win: '#bfe6ff', balc: '#F1C40F' },
-  { wall: '#BFD8A8', trim: '#1E8449', win: '#a9e0ff', balc: '#2ECC71' },
-  { wall: '#C9D6F2', trim: '#1F618D', win: '#9fd0ff', balc: '#3498DB' },
-  { wall: '#F6C28B', trim: '#A04000', win: '#ffe2a8', balc: '#E74C3C' },
+  { wall: '#FFC76B', trim: '#D8402E', win: '#9ad8ff', balc: '#FF7A1A' },
+  { wall: '#FF8FA3', trim: '#8E2DB5', win: '#bfe6ff', balc: '#FFD21F' },
+  { wall: '#8FE0A0', trim: '#12823F', win: '#a9e0ff', balc: '#2ECC71' },
+  { wall: '#8FB8FF', trim: '#1747B8', win: '#9fd0ff', balc: '#FF9F1C' },
+  { wall: '#FFA970', trim: '#B3420B', win: '#ffe2a8', balc: '#E74C3C' },
 ];
 
 const BUILDERS = {
@@ -150,33 +151,55 @@ const BUILDERS = {
 
 const KINDS = Object.keys(BUILDERS);
 
+// Nền lát vỉa hè dưới mỗi công trình: [rộng, sâu] theo đơn vị gốc của công trình (nhân với tỉ lệ).
+const LOT_PAD = {
+  bigBen: [2.5, 1.2], eiffel: [1.5, 1.5], liberty: [1.7, 1.7], lighthouse: [1.7, 0.9], curved: [1.3, 1.4], ringOrange: [1.2, 1.3],
+  ringPink: [1.2, 1.3], skyBlue: [0.95, 0.85], skyViolet: [0.95, 0.85], skyGreen: [0.95, 0.85], redHotel: [1.4, 1.0], villa: [1.3, 1.1],
+  villaBlue: [1.3, 1.1], cityHall: [1.7, 1.1], shops: [1.7, 1.0], towerOrange: [1.1, 0.9], towerYellow: [1.1, 0.9],
+  towerPink: [1.1, 0.9], towerMint: [1.1, 0.9], fountain: [1.4, 1.4],
+};
+
+const lotBuilder = (kind) => LANDMARKS[kind] || BUILDERS[kind];
+
+/** Ba loại lô nền: vỉa hè lát đá (công trình), bãi cỏ nhỏ (công trình nổi tiếng), không nền. */
+function lotPad(kind, k) {
+  const [w, d] = LOT_PAD[kind] || [1.6, 1.4];
+  return [w * k + 0.2, d * k + 0.2];
+}
+
 /** Dựng các lô nhà trong thành phố. Trả về Group (gộp tĩnh được). */
 export function buildCityBlocks() {
   const root = new THREE.Group();
   const lots = [
-    // [x, z, rotY, kind, scale]
-    [-5.5, -5.5, 0, 'tower', 1.0], [-5.5, -4.0, 0, 'apartment', 0.78],
-    [5.5, -5.5, 0, 'rotunda', 1.0], [5.5, -4.0, 0, 'mall', 0.7],
-    [-5.5, 5.6, Math.PI, 'eco', 0.95], [-4.3, 5.9, Math.PI, 'apartment', 0.7],
-    [5.5, 5.6, Math.PI, 'station', 0.9], [4.2, 5.9, Math.PI, 'apartment', 0.7],
-    [-2.8, -5.7, 0, 'apartment', 0.72], [2.8, -5.7, 0, 'eco', 0.62],
-    [-5.9, -1.4, Math.PI / 2, 'mall', 0.62], [5.9, -1.4, -Math.PI / 2, 'apartment', 0.66],
-    [-5.9, 2.6, Math.PI / 2, 'apartment', 0.66], [5.9, 2.6, -Math.PI / 2, 'tower', 0.72],
-    [-3.3, -1.7, 0, 'rotunda', 0.78], [3.3, -1.7, 0, 'tower', 0.8],
-    [-3.2, 2.3, Math.PI, 'station', 0.62], [3.2, 2.3, Math.PI, 'eco', 0.66],
-    [-4.3, -3.0, 0, 'apartment', 0.62], [4.3, -2.9, 0, 'mall', 0.55],
+    // [x, z, rotY, kind, scale]   — mặt tiền (-z cục bộ) quay ra đường gần nhất
+    // hàng sau (nhìn ra đường phía Bắc)
+    [-5.1, -5.3, 0, 'eiffel', 1.0], [-2.8, -5.35, 0, 'curved', 0.88], [0.75, -5.6, 0, 'bigBen', 0.88],
+    [3.0, -5.35, 0, 'ringOrange', 0.9], [5.1, -5.3, 0, 'skyBlue', 0.9],
+    // cột trái
+    [-5.45, -3.0, Math.PI / 2, 'towerPink', 0.82], [-5.45, -1.2, Math.PI / 2, 'villa', 0.85],
+    [-5.45, 0.9, Math.PI / 2, 'cityHall', 0.72], [-5.45, 3.0, Math.PI / 2, 'shops', 0.8],
+    // cột phải (đu quay đặt riêng)
+    [5.45, -3.0, -Math.PI / 2, 'redHotel', 0.8], [5.45, 1.8, -Math.PI / 2, 'skyViolet', 0.78],
+    [5.45, 3.4, -Math.PI / 2, 'towerMint', 0.8],
+    // hai góc phía trước
+    [-5.3, 5.3, Math.PI, 'liberty', 0.95], [5.3, 5.3, Math.PI, 'lighthouse', 0.9],
+    // vòng trong
+    [-3.55, -3.3, 0, 'towerYellow', 0.78], [3.55, -3.3, 0, 'skyGreen', 0.8],
+    [-3.45, -1.3, 0, 'villaBlue', 0.62], [3.45, -1.4, 0, 'towerOrange', 0.7],
+    [-2.6, 2.2, Math.PI, 'fountain', 0.75], [2.6, 2.2, Math.PI, 'mall', 0.5],
   ];
   const rand = rng(2024);
-  const paving = stoneMaterial('#D9CDB4', { repeat: 2, roughness: 0.8 });
+  const paving = stoneMaterial('#E2D3B2', { repeat: 2, roughness: 0.8 });
   for (const [x, z, rotY, kind, s] of lots) {
     const lot = new THREE.Group();
     lot.position.set(x, 0.08, z);
     lot.rotation.y = rotY;
-    const k = s * 1.12;
-    box(lot, paving, 0, 0, 0, 1.6 * k + 0.35, 0.02, 1.4 * k + 0.35); // nền lát đá/vỉa hè
-    const b = BUILDERS[kind](rand);
-    b.scale.setScalar(k);
-    b.position.y = 0.02;
+    const [pw, pd] = lotPad(kind, s);
+    box(lot, paving, 0, 0, 0, pw, 0.025, pd); // nền lát đá/vỉa hè
+    box(lot, mat('#CDBF9F', { roughness: 0.8 }), 0, 0, 0, pw + 0.07, 0.012, pd + 0.07); // viền bó vỉa
+    const b = lotBuilder(kind)(rand);
+    b.scale.setScalar(s);
+    b.position.y = 0.025;
     lot.add(b);
     root.add(lot);
   }
@@ -185,15 +208,17 @@ export function buildCityBlocks() {
 
 // --------------------------------------------------------------- người đi bộ
 const SKIN = ['#F1C9A5', '#E0A981', '#C68A62', '#8D5A3B', '#FFDCC0'];
-const SHIRT = ['#E74C3C', '#3498DB', '#F1C40F', '#2ECC71', '#9B59B6', '#ECF0F1', '#E67E22', '#1ABC9C', '#FF6FA5'];
-const PANTS = ['#2C3E50', '#34495E', '#5D4037', '#455A64', '#1B2631'];
+const SHIRT = ['#E74C3C', '#3498DB', '#F1C40F', '#2ECC71', '#9B59B6', '#ECF0F1', '#E67E22', '#1ABC9C', '#FF6FA5', '#FF4D4D', '#2979FF'];
+const PANTS = ['#2C3E50', '#34495E', '#5D4037', '#455A64', '#1B2631', '#1565C0', '#6D4C41'];
+const HAIR = ['#1B1B1B', '#3E2723', '#6D4C41', '#E0B04A', '#B5502B', '#9E9E9E'];
+const HAT = ['#E53935', '#1E88E5', '#FDD835', '#43A047', '#FF7043'];
 
 /**
- * Dân cư đi bộ: mỗi người gồm chân, thân, đầu (InstancedMesh) đi qua lại trên một đoạn vỉa hè,
- * đung đưa như bước chân thật.
+ * Dân cư đi bộ: mỗi người gồm chân, thân, hai tay, đầu và tóc/mũ (InstancedMesh) đi qua lại
+ * trên một đoạn vỉa hè; chân và tay đung đưa ngược nhau như bước chân thật.
  */
 export class Pedestrians {
-  constructor(parent, paths, count = 70, seed = 5) {
+  constructor(parent, paths, count = 120, seed = 5) {
     this.rand = rng(seed);
     this.people = [];
     const r = this.rand;
@@ -203,74 +228,98 @@ export class Pedestrians {
         a: new THREE.Vector3(...path[0]),
         b: new THREE.Vector3(...path[1]),
         t: r(),
-        speed: 0.03 + r() * 0.05,
+        speed: 0.035 + r() * 0.05,
         dir: r() < 0.5 ? 1 : -1,
         phase: r() * 10,
-        scale: 0.85 + r() * 0.3,
+        scale: 1.45 + r() * 0.4,
+        len: new THREE.Vector3(...path[0]).distanceTo(new THREE.Vector3(...path[1])) || 1,
       });
     }
     const n = count;
-    this.legs = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.014, 0.012, 0.08, 6).translate(0, -0.04, 0), mat('#ffffff'), n * 2);
-    this.body = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.03, 0.06, 3, 8).translate(0, 0.07, 0), mat('#ffffff', { roughness: 0.7 }), n);
-    this.head = new THREE.InstancedMesh(new THREE.SphereGeometry(0.026, 10, 8).translate(0, 0.16, 0), mat('#ffffff', { roughness: 0.6 }), n);
+    const white = (rough) => mat('#ffffff', { roughness: rough });
+    this.legs = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.014, 0.012, 0.08, 6).translate(0, -0.04, 0), white(0.8), n * 2);
+    this.body = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.03, 0.06, 3, 8).translate(0, 0.07, 0), white(0.7), n);
+    this.arms = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.011, 0.05, 2, 6).translate(0, -0.03, 0), white(0.7), n * 2);
+    this.head = new THREE.InstancedMesh(new THREE.SphereGeometry(0.027, 12, 10).translate(0, 0.165, 0), white(0.6), n);
+    this.hair = new THREE.InstancedMesh(new THREE.SphereGeometry(0.0305, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55).translate(0, 0.168, 0.002), white(0.7), n);
     const c = new THREE.Color();
     this.people.forEach((p, i) => {
-      this.body.setColorAt(i, c.set(SHIRT[Math.floor(r() * SHIRT.length)]));
+      const shirt = c.set(SHIRT[Math.floor(r() * SHIRT.length)]).clone();
+      this.body.setColorAt(i, shirt);
+      this.arms.setColorAt(i * 2, shirt);
+      this.arms.setColorAt(i * 2 + 1, shirt);
       this.head.setColorAt(i, c.set(SKIN[Math.floor(r() * SKIN.length)]));
+      this.hair.setColorAt(i, c.set(r() < 0.25 ? HAT[Math.floor(r() * HAT.length)] : HAIR[Math.floor(r() * HAIR.length)]));
       const pants = c.set(PANTS[Math.floor(r() * PANTS.length)]).clone();
       this.legs.setColorAt(i * 2, pants);
       this.legs.setColorAt(i * 2 + 1, pants);
     });
-    for (const im of [this.legs, this.body, this.head]) {
+    this.parts = [this.legs, this.body, this.arms, this.head, this.hair];
+    for (const im of this.parts) {
       im.castShadow = true;
       im.frustumCulled = false;
       parent.add(im);
     }
     this.m = new THREE.Matrix4();
     this.q = new THREE.Quaternion();
+    this.q2 = new THREE.Quaternion();
+    this.euler = new THREE.Euler(0, 0, 0, 'YXZ');
     this.up = new THREE.Vector3(0, 1, 0);
     this.v = new THREE.Vector3();
     this.s = new THREE.Vector3();
+    this.o = new THREE.Vector3();
+    this.off = new THREE.Vector3();
   }
 
   update(dt, elapsed) {
+    const { m, q, q2, euler, v, s, o, off } = this;
     this.people.forEach((p, i) => {
-      const len = p.a.distanceTo(p.b) || 1;
-      p.t += (p.dir * p.speed * dt) / len;
+      p.t += (p.dir * p.speed * dt) / p.len;
       if (p.t > 1) { p.t = 1; p.dir = -1; }
       if (p.t < 0) { p.t = 0; p.dir = 1; }
-      this.v.lerpVectors(p.a, p.b, p.t);
+      v.lerpVectors(p.a, p.b, p.t);
       const heading = Math.atan2(p.b.x - p.a.x, p.b.z - p.a.z) + (p.dir < 0 ? Math.PI : 0);
-      this.q.setFromAxisAngle(this.up, heading);
+      q.setFromAxisAngle(this.up, heading);
       const w = elapsed * 9 * (p.speed / 0.05) + p.phase;
-      const bob = Math.abs(Math.sin(w)) * 0.008;
-      this.s.setScalar(p.scale);
-      this.m.compose(new THREE.Vector3(this.v.x, this.v.y + 0.08 * p.scale + bob, this.v.z), this.q, this.s);
-      this.body.setMatrixAt(i, this.m);
-      this.head.setMatrixAt(i, this.m);
+      const bob = Math.abs(Math.sin(w)) * 0.008 * p.scale;
+      s.setScalar(p.scale);
+      o.set(v.x, v.y + 0.08 * p.scale + bob, v.z);
+      m.compose(o, q, s);
+      this.body.setMatrixAt(i, m);
+      this.head.setMatrixAt(i, m);
+      this.hair.setMatrixAt(i, m);
       for (const side of [-1, 1]) {
-        const swing = Math.sin(w) * 0.5 * side;
-        const legQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(swing, heading, 0, 'YXZ'));
-        const off = new THREE.Vector3(side * 0.015 * p.scale, 0, 0).applyQuaternion(this.q);
-        this.m.compose(new THREE.Vector3(this.v.x + off.x, this.v.y + 0.08 * p.scale + bob, this.v.z + off.z), legQ, this.s);
-        this.legs.setMatrixAt(i * 2 + (side > 0 ? 1 : 0), this.m);
+        const swing = Math.sin(w) * 0.55 * side;
+        const k = i * 2 + (side > 0 ? 1 : 0);
+        // chân: xoay quanh hông
+        euler.set(swing, heading, 0);
+        q2.setFromEuler(euler);
+        off.set(side * 0.015 * p.scale, 0, 0).applyQuaternion(q);
+        m.compose(v.set(o.x + off.x, o.y, o.z + off.z), q2, s);
+        this.legs.setMatrixAt(k, m);
+        // tay: xoay quanh vai, ngược pha với chân cùng bên
+        euler.set(-swing * 1.1, heading, 0);
+        q2.setFromEuler(euler);
+        off.set(side * 0.043 * p.scale, 0.12 * p.scale, 0).applyQuaternion(q);
+        m.compose(v.set(o.x + off.x, o.y + off.y, o.z + off.z), q2, s);
+        this.arms.setMatrixAt(k, m);
       }
     });
-    for (const im of [this.legs, this.body, this.head]) im.instanceMatrix.needsUpdate = true;
+    for (const im of this.parts) im.instanceMatrix.needsUpdate = true;
   }
 }
 
-/** Các đoạn vỉa hè để dân cư đi lại: quanh các lô nhà và dọc mép trong vòng đường. */
+/** Các đoạn vỉa hè để dân cư đi lại: vòng vỉa hè sát đường, các lối đi quanh quảng trường và dọc mặt tiền nhà. */
 export function pedestrianPaths() {
-  const y = 0.105;
+  const y = 0.09;
   const paths = [];
-  const ring = 6.3;
+  const ring = 6.35;
   paths.push([[-ring, y, -ring], [ring, y, -ring]], [[-ring, y, ring], [ring, y, ring]], [[-ring, y, -ring], [-ring, y, ring]], [[ring, y, -ring], [ring, y, ring]]);
-  for (const [x, z] of [[-5.5, -4.7], [5.5, -4.7], [-5.5, 4.8], [5.5, 4.8], [-2.8, -4.9], [2.8, -4.9]]) {
-    paths.push([[x - 0.9, y, z], [x + 0.9, y, z]]);
-  }
-  for (const x of [-4.8, 4.8]) paths.push([[x, y, -2.6], [x, y, 3.6]]);
-  paths.push([[-2.4, y, -1.2], [2.4, y, -1.2]]);
+  // vòng đi bộ quanh quảng trường giữa (xúc xắc, logo, bộ bài)
+  paths.push([[-2.7, y, -1.05], [2.7, y, -1.05]], [[-2.9, y, 3.0], [2.9, y, 3.0]], [[-2.95, y, -1.0], [-2.95, y, 3.0]], [[2.95, y, -1.0], [2.95, y, 3.0]]);
+  // dọc mặt tiền các hàng nhà trong
+  paths.push([[-4.5, y, -4.15], [-1.5, y, -4.15]], [[1.8, y, -4.15], [4.6, y, -4.15]]);
+  for (const x of [-4.55, 4.55]) paths.push([[x, y, -4.0], [x, y, 3.8]]);
   return paths;
 }
 

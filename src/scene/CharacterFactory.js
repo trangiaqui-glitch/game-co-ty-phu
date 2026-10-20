@@ -417,3 +417,221 @@ export function createProceduralClips() {
 
   return clips;
 }
+
+// ===========================================================================
+// Nhân vật 3D hoạt hình ("toon"): tỷ lệ gần người thật như phim hoạt hình 3D —
+// đầu to vừa phải, cổ, thân có vai/eo, tay có khuỷu, chân dài, giày, tóc có khối,
+// mắt lớn có tròng + ánh sáng. Dùng CHUNG tên xương (rig/hips/body/head/armL/armR/
+// legL/legR/eyes/mouthSmile/mouthFrown) với bộ clip thủ tục nên đi/chạy/ăn mừng/buồn
+// hoạt động y như các nhân vật khác.
+// ===========================================================================
+
+export const TOON_HIPS_Y = 0.52; // độ cao hông; clip gốc đặt thân ở y = 0.3 nên được cộng thêm chênh lệch.
+
+const T = {
+  sphere: new THREE.SphereGeometry(1, 32, 24),
+  cyl: new THREE.CylinderGeometry(1, 1, 1, 24),
+  rbox: new RoundedBoxGeometry(1, 1, 1, 4, 0.25),
+  arc: new THREE.TorusGeometry(1, 0.24, 8, 18, Math.PI),
+  smile: new THREE.TorusGeometry(1, 0.11, 8, 22, Math.PI),
+};
+T.head = headGeometry();
+
+// Đầu hình quả trứng: phần dưới thon dần về cằm (một khối liền, không còn đường nối giữa sọ và hàm).
+function headGeometry() {
+  const g = new THREE.SphereGeometry(1, 40, 30);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const y = p.getY(i);
+    if (y < 0) {
+      const k = 1 - 0.2 * Math.pow(-y, 1.4);
+      p.setX(i, p.getX(i) * k);
+      p.setZ(i, p.getZ(i) * (1 - 0.12 * Math.pow(-y, 1.4)));
+      p.setY(i, y * 0.92);
+    }
+  }
+  g.computeVertexNormals();
+  return g;
+}
+
+function lathe(points, segments = 28) {
+  return new THREE.LatheGeometry(points.map(([r, y]) => new THREE.Vector2(r, y)), segments);
+}
+
+const TORSO_GEO = lathe([[0.001, -0.03], [0.1, -0.03], [0.118, 0.02], [0.114, 0.12], [0.126, 0.24], [0.152, 0.335], [0.146, 0.395], [0.07, 0.425], [0.001, 0.43]]);
+const SKIRT_GEO = lathe([[0.001, 0.0], [0.12, 0.0], [0.15, -0.1], [0.2, -0.3], [0.001, -0.3]]);
+
+function limb(topR, botR, len) {
+  return new THREE.CylinderGeometry(topR, botR, len, 20).translate(0, -len / 2, 0);
+}
+
+export function buildToonCharacter(def) {
+  const L = def.look;
+  const phys = (color, o = {}) => new THREE.MeshPhysicalMaterial({ color, roughness: 0.5, metalness: 0.0, ...o });
+  const M = {
+    skin: phys(L.skin, { roughness: 0.55, sheen: 0.6, sheenRoughness: 0.5, sheenColor: new THREE.Color('#ffb59a') }),
+    hair: phys(L.hair, { roughness: 0.35, clearcoat: 0.4, clearcoatRoughness: 0.4 }),
+    top: phys(L.top, { roughness: 0.62, sheen: 0.4, sheenColor: new THREE.Color('#ffffff') }),
+    bottom: phys(L.bottom, { roughness: 0.6 }),
+    shoes: phys(L.shoes, { roughness: 0.25, clearcoat: 0.6, clearcoatRoughness: 0.2 }),
+    white: phys('#ffffff', { roughness: 0.12, clearcoat: 1 }),
+    iris: phys(L.eye || '#3B2417', { roughness: 0.2, clearcoat: 1 }),
+    black: phys('#111116', { roughness: 0.15 }),
+    mouth: phys('#8a2f3a', { roughness: 0.5 }),
+    blush: phys('#ff8f8f', { roughness: 1, transparent: true, opacity: 0.35 }),
+    belt: phys('#1a1a1e', { roughness: 0.4, side: THREE.DoubleSide }),
+    gold: phys('#FFC83D', { roughness: 0.25, metalness: 0.8 }),
+    accent: phys(def.color, { roughness: 0.4 }),
+  };
+  const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.02, ...o });
+
+  const root = new THREE.Group();
+  root.name = `character-${def.id}`;
+  const rig = group('rig');
+  root.add(rig);
+  const H = TOON_HIPS_Y;
+
+  // ---- chân + quần/váy + giày
+  const hips = group('hips', [0, H, 0]);
+  rig.add(hips);
+  const legMat = L.skirt ? M.skin : M.bottom;
+  for (const side of [-1, 1]) {
+    const leg = group(side < 0 ? 'legL' : 'legR', [0.065 * side, 0, 0]);
+    leg.add(mesh(limb(0.066, L.skirt ? 0.036 : 0.052, 0.46), legMat, [0, 0, 0]));
+    leg.add(mesh(T.sphere, M.shoes, [0, -0.485, 0.032], [0.056, 0.042, 0.108]));
+    leg.add(mesh(T.rbox, M.black, [0, -0.52, 0.03], [0.06, 0.012, 0.115]));
+    hips.add(leg);
+  }
+
+  // ---- thân
+  const body = group('body', [0, H, 0]);
+  rig.add(body);
+  body.add(mesh(TORSO_GEO, M.top, [0, 0, 0], [1, 1, 0.72]));
+  if (L.skirt) {
+    body.add(mesh(SKIRT_GEO, M.bottom, [0, 0.01, 0], [1, 1, 0.82]));
+  } else {
+    body.add(mesh(T.sphere, M.bottom, [0, -0.01, 0], [0.12, 0.075, 0.088])); // hông
+    body.add(mesh(new THREE.CylinderGeometry(1, 1, 1, 28, 1, true), M.belt, [0, 0.025, 0], [0.12, 0.028, 0.088])); // thắt lưng
+    body.add(mesh(T.rbox, M.gold, [0, 0.025, 0.089], [0.032, 0.026, 0.01])); // khoá thắt lưng
+  }
+  body.add(mesh(T.cyl, M.skin, [0, 0.41, 0], [0.04, 0.05, 0.04])); // cổ
+
+  // ---- tay: tay áo, khuỷu hơi gập, nắm tay
+  const shortSleeve = L.sleeve !== 'long';
+  for (const side of [-1, 1]) {
+    const arm = group(side < 0 ? 'armL' : 'armR', [0.168 * side, 0.355, 0]);
+    arm.add(mesh(T.sphere, M.top, [0, 0, 0], [0.052, 0.052, 0.05])); // vai
+    const upperLen = 0.17;
+    arm.add(mesh(limb(0.045, 0.041, shortSleeve ? 0.105 : upperLen), M.top, [0, -0.005, 0], [1, 1, 1], [0, 0, 0.06 * side]));
+    if (shortSleeve) arm.add(mesh(limb(0.037, 0.034, 0.07), M.skin, [0.006 * side, -0.1, 0], [1, 1, 1], [0, 0, 0.06 * side]));
+    const fore = group(`forearm${side < 0 ? 'L' : 'R'}`, [0.012 * side, -upperLen, 0]);
+    fore.rotation.x = -0.28;
+    fore.add(mesh(T.sphere, shortSleeve ? M.skin : M.top, [0, 0, 0], [0.036, 0.036, 0.036])); // khuỷu
+    fore.add(mesh(limb(0.034, 0.029, 0.15), shortSleeve ? M.skin : M.top, [0, 0, 0]));
+    const hand = group(side < 0 ? 'handL' : 'handR', [0, -0.165, 0.005]);
+    hand.add(mesh(T.sphere, M.skin, [0, 0, 0], [0.036, 0.042, 0.034]));
+    hand.add(mesh(T.sphere, M.skin, [-0.026 * side, 0.012, 0.016], [0.013, 0.02, 0.013], [0, 0, -0.3 * side])); // ngón cái
+    fore.add(hand);
+    arm.add(fore);
+    body.add(arm);
+  }
+
+  // ---- đầu
+  const head = group('head', [0, 0.4, 0]);
+  body.add(head);
+  head.add(mesh(T.head, M.skin, [0, 0.128, 0], [0.124, 0.138, 0.122])); // đầu hình trứng
+  for (const side of [-1, 1]) head.add(mesh(T.sphere, M.skin, [0.12 * side, 0.125, -0.004], [0.017, 0.03, 0.02])); // tai
+
+  const eyes = group('eyes', [0, 0.14, 0.092]);
+  head.add(eyes);
+  for (const side of [-1, 1]) {
+    const x = 0.05 * side;
+    eyes.add(mesh(T.sphere, M.white, [x, 0, 0], [0.03, 0.036, 0.022]));
+    eyes.add(mesh(T.sphere, M.iris, [x + 0.002 * side, -0.003, 0.013], [0.021, 0.026, 0.014]));
+    eyes.add(mesh(T.sphere, M.black, [x + 0.002 * side, -0.003, 0.021], [0.011, 0.014, 0.008]));
+    eyes.add(mesh(T.sphere, M.white, [x + 0.006 * side, 0.011, 0.028], [0.006, 0.006, 0.004])); // ánh sáng trong mắt
+  }
+  for (const side of [-1, 1]) {
+    head.add(mesh(T.rbox, M.hair, [0.05 * side, 0.19, 0.1], [0.04, 0.009, 0.012], [0, 0, 0.12 * side])); // lông mày
+    head.add(mesh(T.sphere, M.blush, [0.07 * side, 0.098, 0.097], [0.024, 0.015, 0.006]));
+  }
+  head.add(mesh(T.sphere, M.skin, [0, 0.105, 0.118], [0.014, 0.012, 0.012])); // mũi
+  const mouthMat = L.lipColor ? std(L.lipColor, { roughness: 0.4 }) : M.mouth;
+  // Miệng: nhóm có tên (clip co/giãn nhóm) chứa nét cong mảnh, nhỏ gọn.
+  for (const [name, y, rotZ] of [['mouthSmile', 0.073, Math.PI], ['mouthFrown', 0.05, 0]]) {
+    const m = group(name, [0, y, 0.106]);
+    m.rotation.z = rotZ;
+    m.scale.setScalar(name === 'mouthSmile' ? 0.055 : 0.0001);
+    m.add(mesh(T.smile, mouthMat, [0, 0, 0], [0.5, 0.42, 0.7]));
+    head.add(m);
+  }
+
+  // Tóc / mũ: dùng lại bộ dựng cũ (hệ toạ độ đầu chibi), thu về đúng cỡ đầu mới.
+  const ornament = group('ornament', [0, 0.128 - 0.27 * 0.43, 0]);
+  ornament.scale.setScalar(0.43);
+  head.add(ornament);
+  buildHair(ornament, L, M);
+  if (L.hat !== 'helmet' && L.hairStyle !== 'none') ornament.add(mesh(T.sphere, M.hair, [0, 0.5, -0.04], [0.3, 0.14, 0.29])); // phủ kín đỉnh đầu
+  if (L.hairStyle === 'slick' || L.hairStyle === 'short') {
+    // khối tóc dày hơn + mái hất lên như nhân vật mẫu
+    ornament.add(mesh(T.sphere, M.hair, [0.05, 0.5, 0.1], [0.2, 0.1, 0.14], [0.35, 0, -0.35]));
+    ornament.add(mesh(T.sphere, M.hair, [-0.09, 0.48, 0.05], [0.14, 0.08, 0.14], [0.2, 0, 0.3]));
+    for (const side of [-1, 1]) ornament.add(mesh(T.sphere, M.hair, [0.262 * side, 0.36, -0.03], [0.05, 0.09, 0.14]));
+  }
+  buildHat(ornament, L, M, std);
+
+  // ---- trang phục & phụ kiện
+  const extras = L.extras || [];
+  if (extras.includes('collar') || L.collar) {
+    for (const side of [-1, 1]) {
+      body.add(mesh(T.rbox, M.top, [0.036 * side, 0.405, 0.06], [0.05, 0.02, 0.05], [0.5, 0.2 * side, 0.45 * side]));
+    }
+  }
+  if (extras.includes('tie')) {
+    const tie = std(L.tieColor || '#E53935', { roughness: 0.3, metalness: 0.05 });
+    const blade = new THREE.Shape();
+    blade.moveTo(-0.018, 0.0);
+    blade.lineTo(0.018, 0.0);
+    blade.lineTo(0.028, -0.2);
+    blade.lineTo(0.0, -0.225);
+    blade.lineTo(-0.028, -0.2);
+    blade.closePath();
+    const bladeGeo = new THREE.ExtrudeGeometry(blade, { depth: 0.008, bevelEnabled: true, bevelSize: 0.004, bevelThickness: 0.004, bevelSegments: 2 });
+    body.add(mesh(bladeGeo, tie, [0, 0.375, 0.098 * 0.72 + 0.03], [1, 1, 1], [-0.08, 0, 0]));
+    body.add(mesh(T.sphere, tie, [0, 0.382, 0.098 * 0.72 + 0.036], [0.022, 0.02, 0.014]));
+  }
+  // Phụ kiện còn lại (khăn, vest, tạp dề, ba lô, cặp...) dùng bộ cũ, thu về cỡ thân mới.
+  const acc = group('trim', [0, 0.2 - 0.17 * 0.78, 0.0]);
+  acc.scale.set(0.78, 0.78, 0.62);
+  body.add(acc);
+  const shim = { add: (o) => acc.add(o), getObjectByName: (n) => body.getObjectByName(n) };
+  if (extras.includes('necklace')) {
+    const pearl = std('#FFFFFF', { roughness: 0.1, metalness: 0.2 });
+    body.add(mesh(new THREE.TorusGeometry(1, 0.16, 8, 28), pearl, [0, 0.378, 0.012], [0.07, 0.07, 0.06], [Math.PI / 2 + 0.25, 0, 0]));
+  }
+  buildExtras(shim, head, { ...L, extras: extras.filter((e) => e !== 'tie' && e !== 'collar' && e !== 'necklace') }, M, std);
+  buildAccessory(rig, shim, L, M, std);
+
+  const materials = new Set();
+  root.traverse((o) => {
+    if (o.isMesh) {
+      o.castShadow = true;
+      o.receiveShadow = false;
+      materials.add(o.material);
+    }
+  });
+  return { root, materials: [...materials] };
+}
+
+/** Clip thủ tục cho nhân vật toon: cùng bộ clip gốc, nâng thân lên theo độ cao hông mới. */
+export function createToonClips() {
+  const clips = createProceduralClips();
+  const dy = TOON_HIPS_Y - 0.3;
+  for (const clip of Object.values(clips)) {
+    for (const track of clip.tracks) {
+      if (track.name !== 'body.position') continue;
+      for (let i = 1; i < track.values.length; i += 3) track.values[i] += dy;
+    }
+  }
+  return clips;
+}

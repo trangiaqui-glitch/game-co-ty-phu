@@ -210,7 +210,7 @@ export function buildTrain(color = '#E53935') {
 // Mọi landmark nằm trong vùng ~1.5 x 1.0, mặt tiền hướng -z (về phía đường đi).
 const LANDMARK_BUILDERS = {
   brown(g, color, v) {
-    const wall = v ? '#F6E0B8' : '#EED3A8';
+    const wall = v ? '#FFCB8A' : '#F5B97A';
     block(g, facade(wall, { cols: 2, rows: 1, window: '#9ad8ff', brick: true }), 0, 0, 0, 0.9, 0.5, 0.7);
     roofPyramid(g, 0, 0.5, 0, 1.05, 0.85, 0.42, color);
     door(g, v ? 0.2 : -0.2, -0.36);
@@ -218,7 +218,7 @@ const LANDMARK_BUILDERS = {
     g.add(buildTree(0.8).translateX(-0.62).translateZ(0.2));
   },
   lightblue(g, color, v) {
-    block(g, facade('#FFFFFF', { cols: 3, rows: 2, window: '#7fd0ff' }), 0, 0, 0.05, 1.15, 0.62, 0.68);
+    block(g, facade('#A9E4FF', { cols: 3, rows: 2, window: '#5ab8ff' }), 0, 0, 0.05, 1.15, 0.62, 0.68);
     block(g, mat(color), 0, 0.62, 0.05, 1.2, 0.07, 0.72);
     g.add(part(GEO.box(), mat(color, { roughness: 0.6 }), [0, 0.46, -0.42], [1.16, 0.04, 0.32], [-0.35, 0, 0]));
     g.add(part(GEO.box(), mat('#ffffff'), [0, 0.465, -0.42], [1.16, 0.041, 0.1], [-0.35, 0, 0]));
@@ -226,36 +226,36 @@ const LANDMARK_BUILDERS = {
     door(g, v ? -0.3 : 0.3, -0.29, 0.3, '#2E5E8C');
   },
   pink(g, color, v) {
-    block(g, facade('#FFF2F7', { cols: 3, rows: 1, window: '#ffd2ea' }), 0, 0, 0, 1.1, 0.48, 0.74);
-    block(g, facade('#FFF2F7', { cols: 2, rows: 1, window: '#ffd2ea' }), v ? 0.15 : -0.15, 0.48, 0.05, 0.72, 0.42, 0.6);
+    block(g, facade('#FFB3D4', { cols: 3, rows: 1, window: '#fff0f8' }), 0, 0, 0, 1.1, 0.48, 0.74);
+    block(g, facade('#FFB3D4', { cols: 2, rows: 1, window: '#fff0f8' }), v ? 0.15 : -0.15, 0.48, 0.05, 0.72, 0.42, 0.6);
     roofPyramid(g, v ? 0.15 : -0.15, 0.9, 0.05, 0.86, 0.72, 0.36, color);
     block(g, mat('#ffffff'), v ? 0.15 : -0.15, 0.46, -0.32, 0.74, 0.05, 0.16);
     door(g, v ? -0.3 : 0.3, -0.38, 0.26, '#B0306F');
     g.add(buildTree(0.6, '#F48FB1').translateX(v ? -0.6 : 0.6).translateZ(0.3));
   },
   orange(g, color, v) {
-    block(g, facade('#FFE7CC', { cols: 3, rows: 4, window: '#ffcf99' }), 0, 0, 0.05, 1.0, 1.05, 0.72);
+    block(g, facade('#FFB45E', { cols: 3, rows: 4, window: '#ffe7b8' }), 0, 0, 0.05, 1.0, 1.05, 0.72);
     block(g, mat(color), 0, 1.05, 0.05, 1.08, 0.08, 0.8);
     g.add(part(GEO.cyl(14), mat('#7FB3D5'), [v ? 0.25 : -0.25, 1.25, 0.15], [0.12, 0.2, 0.12]));
     door(g, 0, -0.32, 0.26, '#8a4b1d');
     block(g, mat(color, { roughness: 0.6 }), 0, 0.3, -0.36, 0.46, 0.04, 0.14);
   },
   red(g, color, v) {
-    block(g, facade('#F7D4CC', { cols: 3, rows: 5, window: '#a9dcff' }), 0, 0, 0.05, 0.92, 1.35, 0.72);
+    block(g, facade('#FF8F84', { cols: 3, rows: 5, window: '#c3e6ff' }), 0, 0, 0.05, 0.92, 1.35, 0.72);
     block(g, mat(color), 0, 1.35, 0.05, 0.98, 0.1, 0.78);
     block(g, mat(color), 0, 0, -0.33, 0.98, 0.16, 0.08);
     g.add(part(GEO.cyl(8), mat('#cccccc', { metalness: 0.6 }), [v ? 0.25 : -0.25, 1.65, 0.1], [0.02, 0.45, 0.02]));
     g.add(part(GEO.sphere(), mat('#ff4444', { emissive: '#ff0000', emissiveIntensity: 0.8 }), [v ? 0.25 : -0.25, 1.88, 0.1], [0.04, 0.04, 0.04]));
   },
   yellow(g, color, v) {
-    g.add(part(GEO.cyl(24), facade('#FFF7D6', { cols: 8, rows: 6, window: '#9fd8ff' }), [0, 0.8, 0.05], [0.42, 1.6, 0.42]));
+    g.add(part(GEO.cyl(24), facade('#FFE066', { cols: 8, rows: 6, window: '#9fd8ff' }), [0, 0.8, 0.05], [0.42, 1.6, 0.42]));
     g.add(part(GEO.cyl(24), mat(color, { metalness: 0.4, roughness: 0.3 }), [0, 1.64, 0.05], [0.46, 0.08, 0.46]));
     g.add(part(GEO.hemi(), glass('#FFE58A'), [0, 1.68, 0.05], [0.32, 0.28, 0.32]));
     block(g, mat(color), 0, 0, -0.32, 0.6, 0.22, 0.2);
     if (v) g.add(buildTree(0.7).translateX(0.6).translateZ(0.25));
   },
   green(g, color, v) {
-    const glassMat = facade('#CDEBD6', { cols: 3, rows: 7, window: '#64c98a', frame: '#e8fff0', glassy: true });
+    const glassMat = facade('#9FE3B6', { cols: 3, rows: 7, window: '#2fb36a', frame: '#e8fff0', glassy: true });
     block(g, glassMat, -0.3, 0, 0.05, 0.48, v ? 1.75 : 1.55, 0.6, false);
     block(g, glassMat, 0.32, 0, 0.05, 0.48, v ? 1.45 : 1.8, 0.6, false);
     block(g, mat(color), 0.01, 1.0, 0.05, 0.2, 0.1, 0.3);
@@ -263,7 +263,7 @@ const LANDMARK_BUILDERS = {
     block(g, mat(color), 0.32, v ? 1.45 : 1.8, 0.05, 0.5, 0.06, 0.62);
   },
   darkblue(g, color, v) {
-    const glassMat = facade('#CFE0FF', { cols: 3, rows: 6, window: '#5b8cff', frame: '#eef4ff', glassy: true });
+    const glassMat = facade('#8FB0FF', { cols: 3, rows: 6, window: '#2f62ff', frame: '#eef4ff', glassy: true });
     const tiers = v ? [[0.86, 0.75], [0.66, 0.65], [0.46, 0.5]] : [[0.8, 0.9], [0.6, 0.7], [0.4, 0.55]];
     let y = 0;
     for (const [w, h] of tiers) {

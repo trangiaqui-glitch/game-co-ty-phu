@@ -10,9 +10,9 @@ export const CHARACTERS = [
     description: 'Doanh nhân mặc vest, luôn mang cặp tài liệu.',
     color: '#2F6BFF',
     look: {
-      skin: '#F7CBA4', hair: '#2A1B14', hairStyle: 'slick',
-      top: '#26355C', bottom: '#1F2A48', shoes: '#151515',
-      extras: ['tie', 'collar'], tieColor: '#E53935', accessory: 'briefcase',
+      skin: '#F2C09A', hair: '#15110F', hairStyle: 'slick', sleeve: 'short',
+      top: '#7DB9E8', bottom: '#17171C', shoes: '#0E0E10',
+      extras: ['tie', 'collar'], tieColor: '#15151A', accessory: 'briefcase',
     },
   },
   {
@@ -22,7 +22,7 @@ export const CHARACTERS = [
     description: 'Nữ doanh nhân thanh lịch với váy dạ hội và túi xách.',
     color: '#E0399A',
     look: {
-      skin: '#F9D2B5', hair: '#5A2E1A', hairStyle: 'long',
+      skin: '#F9D2B5', hair: '#5A2E1A', hairStyle: 'long', sleeve: 'short',
       top: '#B0217A', bottom: '#B0217A', shoes: '#2B0F22', skirt: true,
       extras: ['necklace'], accessory: 'handbag', lipColor: '#D6336C',
     },
@@ -34,7 +34,7 @@ export const CHARACTERS = [
     description: 'Nhà thám hiểm với mũ rộng vành và ba lô to.',
     color: '#2EAD5B',
     look: {
-      skin: '#E8B48A', hair: '#3B2416', hairStyle: 'short', hat: 'safari',
+      skin: '#E8B48A', hair: '#3B2416', hairStyle: 'short', hat: 'safari', sleeve: 'short',
       top: '#C9A86B', bottom: '#7A5A35', shoes: '#4A3020',
       extras: ['scarf'], scarfColor: '#E74C3C', accessory: 'backpack',
     },
@@ -46,7 +46,7 @@ export const CHARACTERS = [
     description: 'Kỹ sư công trình với mũ bảo hộ và cờ lê.',
     color: '#F39C12',
     look: {
-      skin: '#F2C29C', hair: '#1E1E1E', hairStyle: 'short', hat: 'hardhat',
+      skin: '#F2C29C', hair: '#1E1E1E', hairStyle: 'short', hat: 'hardhat', sleeve: 'long',
       top: '#FF7A1A', bottom: '#2F5D9E', shoes: '#3A2A1A',
       extras: ['vest'], accessory: 'wrench',
     },
@@ -58,7 +58,7 @@ export const CHARACTERS = [
     description: 'Đầu bếp vui vẻ với mũ cao và tạp dề trắng.',
     color: '#E74C3C',
     look: {
-      skin: '#F6CFAE', hair: '#3A2318', hairStyle: 'bun', hat: 'chef',
+      skin: '#F6CFAE', hair: '#3A2318', hairStyle: 'bun', hat: 'chef', sleeve: 'long',
       top: '#FFFFFF', bottom: '#2B2B2B', shoes: '#1C1C1C',
       extras: ['apron', 'scarf'], scarfColor: '#E74C3C', accessory: 'spoon',
     },
@@ -70,7 +70,7 @@ export const CHARACTERS = [
     description: 'Phi hành gia mặc đồ bảo hộ trắng, đội mũ kính.',
     color: '#8E44AD',
     look: {
-      skin: '#F4C7A1', hair: '#24160F', hairStyle: 'short', hat: 'helmet',
+      skin: '#F4C7A1', hair: '#24160F', hairStyle: 'short', hat: 'helmet', sleeve: 'long',
       top: '#F4F6FA', bottom: '#E3E7EF', shoes: '#6C7A89',
       extras: ['suitBadge'], accessory: 'jetpack',
     },

@@ -8,6 +8,7 @@ import {
   buildHotel, buildCar, gold,
 } from './ModelFactory.js';
 import { buildCityBlocks, Pedestrians, pedestrianPaths, buildBus } from './CityLife.js';
+import { buildFerrisWheel } from './CityLandmarks.js';
 import { grassMaterial, asphaltMaterial, stoneMaterial, foliageGeometry, leafMaterial, woodMaterial } from './Materials.js';
 
 const TOP_Y = BOARD_LAYOUT.tileHeight;
@@ -27,10 +28,14 @@ const easeOutBounce = (t) => {
 // --------------------------------------------------------------- instanced houses
 class HouseInstancer {
   constructor(parent, capacity = 160) {
+    // Nhà xanh kiểu hoạt hình: thân bo tròn, mái ngói đỏ hai dốc, ống khói, cửa chính và hai cửa sổ.
     const parts = [
       { geo: new RoundedBoxGeometry(1, 1, 1, 2, 0.12), material: mat('#4CD07D', { roughness: 0.4 }), p: [0, 0.11, 0], s: [0.3, 0.22, 0.3] },
-      { geo: GEO.pyramid(), material: mat('#1E8E4E', { roughness: 0.45 }), p: [0, 0.31, 0], s: [0.25, 0.19, 0.25] },
-      { geo: GEO.box(), material: mat('#FFF7E0'), p: [0, 0.08, -0.151], s: [0.08, 0.13, 0.01] },
+      { geo: GEO.prism(), material: mat('#D84A2B', { roughness: 0.5 }), p: [0, 0.277, 0], s: [0.2, 0.113, 0.37] },
+      { geo: GEO.box(), material: mat('#8D4B2F'), p: [0.085, 0.3, 0.06], s: [0.045, 0.1, 0.045] },
+      { geo: GEO.box(), material: mat('#FFF7E0'), p: [0, 0.07, -0.151], s: [0.08, 0.13, 0.01] },
+      { geo: GEO.box(), material: mat('#BFE9FF', { roughness: 0.15, metalness: 0.3 }), p: [-0.09, 0.14, -0.151], s: [0.06, 0.06, 0.01] },
+      { geo: GEO.box(), material: mat('#BFE9FF', { roughness: 0.15, metalness: 0.3 }), p: [0.09, 0.14, -0.151], s: [0.06, 0.06, 0.01] },
     ];
     this.capacity = capacity;
     this.parts = parts.map((pt) => {
@@ -234,6 +239,7 @@ export class BoardView {
     this.spinners = [];
     this.policeLights = [];
     this.clouds = [];
+    this.animated = []; // công trình có chuyển động (đu quay...)
     this.effects = new Set();
     this.speed = 1;
     this.bankPosition = new THREE.Vector3(0, 2.6, -3.0);
@@ -407,7 +413,15 @@ export class BoardView {
   _buildCenter() {
     const s = this.staticRoot;
     const inner = BOARD_SIZE - 2 * BOARD_LAYOUT.cornerSize - 0.4;
-    s.add(part(new RoundedBoxGeometry(inner, 0.08, inner, 3, 0.04), stoneMaterial('#D6CBB3', { repeat: 5, roughness: 0.85 }), [0, 0.04, 0]));
+    // Nền trung tâm là bãi cỏ xanh (cỏ lặp dày hơn đảo bên ngoài để ngọn cỏ nhỏ, mịn).
+    const lawn = grassMaterial().clone();
+    lawn.map = lawn.map.clone();
+    lawn.bumpMap = lawn.bumpMap.clone();
+    for (const t of [lawn.map, lawn.bumpMap]) {
+      t.repeat.set(9, 9);
+      t.needsUpdate = true;
+    }
+    s.add(part(new RoundedBoxGeometry(inner, 0.08, inner, 3, 0.04), lawn, [0, 0.04, 0]));
 
     // Đường vòng quanh trung tâm
     const roadShape = (size, r) => {
@@ -426,6 +440,13 @@ export class BoardView {
     road.position.y = 0.085;
     road.receiveShadow = true;
     s.add(road);
+    // Vỉa hè lát đá chạy sát mép trong của đường (dân cư đi bộ ở đây)
+    const walkShape = roadShape(13.4, 2.1);
+    walkShape.holes.push(roadShape(11.9, 1.4));
+    const walk = new THREE.Mesh(new THREE.ShapeGeometry(walkShape, 12).rotateX(-Math.PI / 2), stoneMaterial('#E8DDC3', { repeat: 0.5, roughness: 0.8 }));
+    walk.position.y = 0.09;
+    walk.receiveShadow = true;
+    s.add(walk);
     const pts = roadShape(14.3, 2.55).getSpacedPoints(80).map((p) => new THREE.Vector3(p.x, 0.1, -p.y));
     this.roadCurve = new THREE.CatmullRomCurve3(pts.slice(0, -1), true);
     const dash = mat('#FFF8E1');
@@ -464,8 +485,8 @@ export class BoardView {
     s.add(logo);
 
     // Bộ thẻ Cơ hội / Khí vận
-    this._buildDeck('chance', -4.3, 0.9, 0.35, '#FF8A00', 'CƠ HỘI');
-    this._buildDeck('community', 4.3, 0.9, -0.35, '#2E86DE', 'KHÍ VẬN');
+    this._buildDeck('chance', -3.7, 0.9, 0.35, '#FF8A00', 'CƠ HỘI');
+    this._buildDeck('community', 3.7, 0.9, -0.35, '#2E86DE', 'KHÍ VẬN');
 
     // Cây xanh và đèn đường (instanced)
     const treePts = [];
@@ -477,7 +498,14 @@ export class BoardView {
     }
     this.staticRoot.add(this._treeInstances(treePts));
     this.staticRoot.add(buildCityBlocks());
-    this.people = new Pedestrians(this.dynamicRoot, pedestrianPaths(), 80);
+    this.people = new Pedestrians(this.dynamicRoot, pedestrianPaths(), 120);
+
+    // Đu quay quay chậm bên phải thành phố
+    const wheel = buildFerrisWheel();
+    wheel.position.set(5.2, 0.08, -0.55);
+    wheel.scale.setScalar(0.85);
+    this.dynamicRoot.add(wheel);
+    this.animated.push(wheel);
 
     const lampPole = mat('#37474F', { metalness: 0.5, roughness: 0.4 });
     const lampHead = mat('#FFF59D', { emissive: '#FFEB3B', emissiveIntensity: 0.7 });
@@ -880,6 +908,7 @@ export class BoardView {
       }
     }
     this.people?.update(dt, elapsed);
+    for (const a of this.animated) a.userData.update?.(elapsed);
     for (const c of this.clouds) {
       c.angle += c.speed * dt;
       c.obj.position.x = Math.cos(c.angle) * c.r;

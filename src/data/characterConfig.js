@@ -10,6 +10,16 @@
 //                    dùng để đồng bộ tốc độ clip với tốc độ di chuyển (không trượt chân).
 // - animationAliases: tên clip có thể có trong GLB cho từng trạng thái (thử theo thứ tự).
 
+// Kiểu nhân vật: 'toon' = nhân vật 3D hoạt hình dựng bằng code (mặc định, giống phim hoạt hình 3D);
+// 'glb' = các model Quaternius trong assets/models/characters. Đổi nhanh bằng URL: ?style=glb
+export const CHARACTER_STYLE = (() => {
+  try {
+    return new URLSearchParams(location.search).get('style') === 'glb' ? 'glb' : 'toon';
+  } catch {
+    return 'toon';
+  }
+})();
+
 export const CHARACTER_TARGET_HEIGHT = 1.2; // ô cờ rộng 2 đơn vị
 export const CHARACTER_MAX_FOOTPRINT = 0.9; // chiều ngang tối đa để không lấn sang vị trí người khác
 export const WALK_SPEED = 4.2; // đơn vị thế giới / giây (nhân với tốc độ hoạt ảnh của game)

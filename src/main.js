@@ -434,7 +434,7 @@ async function startOnlineGame(data) {
   const missing = [];
   for (const p of game.players.list) {
     const ctrl = createCharacter(getCharacter(p.characterId), p, { allowPlaceholder: true });
-    if (ctrl.source !== 'glb') missing.push(p.name);
+    if (ctrl.source !== 'glb' && ctrl.source !== 'toon') missing.push(p.name);
     app.scene.scene.add(ctrl.root);
     app.characters.set(p.id, ctrl);
   }

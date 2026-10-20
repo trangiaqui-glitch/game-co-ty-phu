@@ -2,10 +2,10 @@ import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { EventEmitter } from '../utils/EventEmitter.js';
 import {
-  CHARACTER_CONFIG, CHARACTER_TARGET_HEIGHT, CHARACTER_MAX_FOOTPRINT, PLACEHOLDER_MOTION, PROCEDURAL_CLIPS, getCharacterConfig,
+  CHARACTER_CONFIG, CHARACTER_STYLE, CHARACTER_TARGET_HEIGHT, CHARACTER_MAX_FOOTPRINT, PLACEHOLDER_MOTION, PROCEDURAL_CLIPS, getCharacterConfig,
 } from '../data/characterConfig.js';
 import { getCharacter } from '../data/characters.js';
-import { buildProceduralCharacter, createProceduralClips } from '../scene/CharacterFactory.js';
+import { buildProceduralCharacter, createProceduralClips, buildToonCharacter, createToonClips } from '../scene/CharacterFactory.js';
 import { resolveClips } from './CharacterAnimationController.js';
 import { createSadClip } from './ProceduralClips.js';
 
@@ -101,6 +101,12 @@ export class CharacterAssetManager extends EventEmitter {
       return Promise.resolve(entry);
     }
     if (entry.promise) return entry.promise;
+    if (CHARACTER_STYLE === 'toon') {
+      // Nhân vật 3D hoạt hình dựng bằng code: không cần tải file.
+      entry.promise = Promise.resolve(entry);
+      this._setStatus(entry, LOAD_STATUS.LOADED, { path: 'nhân vật 3D hoạt hình (dựng bằng code)', error: null, norm: this._toonNorm(id) });
+      return entry.promise;
+    }
     this._setStatus(entry, LOAD_STATUS.LOADING, { path: cfg.modelPath });
     entry.promise = this.assets.loadGLTF(cfg.modelPath, { quiet: true }).then((gltf) => {
       if (!gltf) {
@@ -180,7 +186,33 @@ export class CharacterAssetManager extends EventEmitter {
    * Nhân bản nhân vật đã tải. Cấu trúc:
    *   pivot (scale đồng đều + footOffset) └ offset (căn tâm, chân về y=0) └ inner (rotationOffset) └ model (clone có skeleton riêng)
    */
+  _toonNorm(id) {
+    const { root } = buildToonCharacter(getCharacter(id));
+    const box = measure(root);
+    return { scale: 1, worldSize: box.getSize(new THREE.Vector3()).toArray().map((n) => +n.toFixed(3)), footprintClamped: false };
+  }
+
+  // Nhân vật hoạt hình: mỗi người chơi có mô hình + vật liệu riêng (để làm xám khi phá sản).
+  _toonAsset(id) {
+    const def = getCharacter(id);
+    if (!this._toonClips) this._toonClips = createToonClips();
+    const { root } = buildToonCharacter(def);
+    const clips = Object.values(this._toonClips);
+    return {
+      root,
+      animationRoot: root,
+      clips,
+      source: 'toon',
+      info: { meshes: 0, skinnedMeshes: 0, bones: 0, hasSkeleton: false, materials: 0, textures: 0, clips: clips.map((c) => ({ name: c.name, duration: +c.duration.toFixed(2) })) },
+      norm: this.entries.get(id)?.norm || this._toonNorm(id),
+      config: { ...getCharacterConfig(id), animationAliases: null },
+      motion: { walkStride: 1.05, runStride: 1.5 },
+      ownsMaterials: true,
+    };
+  }
+
   cloneCharacter(id) {
+    if (CHARACTER_STYLE === 'toon') return this._toonAsset(id);
     const entry = this.getCharacter(id);
     if (!entry) return null;
     const cfg = getCharacterConfig(id);

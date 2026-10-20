@@ -329,3 +329,7 @@ GitHub Pages chỉ host file tĩnh, **không chạy được `server.js`**, nên
 4. Thử nhanh không cần sửa code: mở `https://<user>.github.io/<repo>/?server=https://<tên>.onrender.com` (được ghi nhớ trong trình duyệt; `?server=` rỗng để xoá).
 
 Lưu ý: gói Free của Render "ngủ" sau ~15 phút không dùng, lần đầu truy cập mất ~30–60 giây để khởi động; hồ sơ người chơi (`data/profiles.json`) bị xoá khi máy chủ khởi động lại. Có thể giới hạn tên miền gọi API bằng biến môi trường `ALLOWED_ORIGIN=https://<user>.github.io`.
+
+## Nhân vật
+
+Mặc định game dùng **nhân vật 3D hoạt hình dựng bằng code** (`buildToonCharacter` trong `src/scene/CharacterFactory.js`, ngoại hình cấu hình trong `src/data/characters.js`), không cần file model. Muốn dùng lại bộ model GLB của Quaternius, mở game với `?style=glb`.

@@ -110,7 +110,7 @@ export class CharacterDebugPanel {
       const player = players.find((x) => x.id === c.player.id);
       return `<tr>
         <td><i class="dot" style="background:${c.player.color}"></i><b>${esc(c.player.name)}</b><br><small>${esc(c.def.id)}</small></td>
-        <td><span class="pill ${c.source === 'glb' ? 'loaded' : 'failed'}">${c.source === 'glb' ? 'GLB' : 'TẠM'}</span></td>
+        <td><span class="pill ${c.source === 'placeholder' ? 'failed' : 'loaded'}">${c.source === 'glb' ? 'GLB' : c.source === 'toon' ? 'TOON' : 'TẠM'}</span></td>
         <td>${esc(c.anim.state)}<br><small>clip: ${esc(c.anim.currentClipName || '—')}${c.motion ? ' · đang đi' : ''}</small></td>
         <td><small>(${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)})<br>ô ${player?.position ?? '?'} · hướng ${(c.heading * 57.3).toFixed(0)}°</small></td>
         <td><small>hộp ${size.x.toFixed(2)} × ${size.y.toFixed(2)} × ${size.z.toFixed(2)}<br>chân lệch mặt bàn: <b class="${Math.abs(foot) > 0.03 ? 'miss' : 'ok'}">${foot >= 0 ? '+' : ''}${foot.toFixed(3)}</b></small></td>

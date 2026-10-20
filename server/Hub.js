@@ -166,7 +166,11 @@ export class Hub {
       case 'createRoom': return this._createRoom(c, !!data.isPublic);
       case 'joinRoom': return this._joinRoom(c, clean(data.code, 8).toUpperCase());
       case 'quickPlay': return this._quickPlay(c);
-      case 'leaveRoom': return this._leaveRoom(c);
+      case 'leaveRoom': {
+        const r = this._leaveRoom(c);
+        this.send(c.profile.id, 'room', null); // báo cho chính người rời để đóng màn hình phòng
+        return r;
+      }
       case 'setSeat': return this._setSeat(c, data);
       case 'addBot': return this._addBot(c);
       case 'removeBot': return this._removeBot(c, Number(data.index));

@@ -53,7 +53,7 @@ async function scenarioA() {
   console.log('\n=== A. Asset GLB thật trong project ===');
   const b = await launch({ root: ROOT, port: 5201, debugPort: 9341 });
   try {
-    await b.send('Page.navigate', { url: 'http://localhost:5201/?mode=offline' });
+    await b.send('Page.navigate', { url: 'http://localhost:5201/?style=glb&mode=offline' });
     await b.waitFor(`!!document.querySelector('#start-menu:not(.hidden)')`, 90000, 'menu');
     const statuses = await b.evaluate(`['businessman','businesswoman','explorer','engineer','chef','astronaut'].map(id => { const e = __coTyPhu.charAssets.status(id);
       return { id, status: e.status, path: e.path, error: e.error, info: e.info && { bones: e.info.bones, sk: e.info.skinnedMeshes, mats: e.info.materials, tex: e.info.textures, clips: e.info.clips.map(c => c.name + '(' + c.duration + 's)') },
@@ -197,7 +197,7 @@ async function scenarioC() {
   console.log('\n=== C. Thiếu file GLB (mô phỏng) ===');
   const b = await launch({ root: ROOT, port: 5203, debugPort: 9343 });
   try {
-    await b.send('Page.navigate', { url: 'http://localhost:5203/?model.businessman=assets/models/characters/__missing__.glb&mode=offline' });
+    await b.send('Page.navigate', { url: 'http://localhost:5203/?model.businessman=assets/models/characters/__missing__.glb&style=glb&mode=offline' });
     await b.waitFor(`!!document.querySelector('#start-menu:not(.hidden)')`, 90000, 'menu');
     const e = await b.evaluate(`__coTyPhu.charAssets.status('businessman')`);
     check(e.status === 'failed' && /404/.test(e.error), 'File thiếu: báo lỗi 404 kèm đường dẫn', e.path);
@@ -225,7 +225,7 @@ async function scenarioB() {
   console.log('\n=== B. Mô hình kiểm thử có rig (RobotExpressive, CC0) ===');
   const b = await launch({ root: ROOT, port: 5202, debugPort: 9342 });
   try {
-    await b.send('Page.navigate', { url: `http://localhost:5202/?model.businessman=${FIXTURE}&model.engineer=${FIXTURE}&mode=offline` });
+    await b.send('Page.navigate', { url: `http://localhost:5202/?model.businessman=${FIXTURE}&model.engineer=${FIXTURE}&style=glb&mode=offline` });
     await b.waitFor(`!!document.querySelector('#start-menu:not(.hidden)')`, 90000, 'menu');
     const e = await b.evaluate(`(() => { const e = __coTyPhu.charAssets.status('businessman'); return { status: e.status, info: e.info, norm: e.norm && { scale: e.norm.scale, worldSize: e.norm.worldSize } }; })()`);
     check(e.status === 'loaded', 'GLB tải thành công');
