@@ -1,16 +1,17 @@
 import * as THREE from 'three';
+import { lotusCoinMaterials } from './Materials.js';
 
-const CONFETTI_COLORS = ['#FF5252', '#FFD740', '#69F0AE', '#40C4FF', '#E040FB', '#FF9100'];
+const CONFETTI_COLORS = ['#FF6B6B', '#FFD147', '#00D2B8', '#38BDF8', '#A855F7', '#FF9F43'];
 
-// Hiệu ứng hạt: tiền xu bay, mưa tiền, pháo giấy, bụi xây dựng.
+// Hiệu ứng hạt: tiền xu hoa sen vàng bay, mưa tiền, pháo giấy, bụi xây dựng.
 export class EffectsManager {
   constructor(scene) {
     this.scene = scene;
     this.quality = 1;
     this.speed = 1;
     this.particles = [];
-    this.coinGeo = new THREE.CylinderGeometry(0.13, 0.13, 0.035, 20);
-    this.coinMat = new THREE.MeshStandardMaterial({ color: '#FFC83D', metalness: 0.8, roughness: 0.25, emissive: '#7a4f00', emissiveIntensity: 0.25 });
+    this.coinGeo = new THREE.CylinderGeometry(0.14, 0.14, 0.038, 22);
+    this.coinMat = lotusCoinMaterials();
     this.coinPool = [];
 
     const cap = 500;

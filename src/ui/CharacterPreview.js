@@ -14,24 +14,30 @@ export class CharacterPreview {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.scene = new THREE.Scene();
-    this.scene.add(new THREE.HemisphereLight('#ffffff', '#ffd9b0', 2.1));
-    const key = new THREE.DirectionalLight('#ffffff', 2.3);
-    key.position.set(2, 4, 3);
+    this.scene.add(new THREE.HemisphereLight('#fffdf6', '#ffe0b5', 2.15));
+    const key = new THREE.DirectionalLight('#fff8eb', 2.45);
+    key.position.set(2.2, 4.2, 3.2);
     this.scene.add(key);
-    const rim = new THREE.DirectionalLight('#9fd3ff', 1.2);
-    rim.position.set(-3, 2, -2);
+    const rim = new THREE.DirectionalLight('#5ce1e6', 1.35);
+    rim.position.set(-3, 2.2, -2);
     this.scene.add(rim);
     const pedestal = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.55, 0.62, 0.12, 48),
-      new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.4 }),
+      new THREE.CylinderGeometry(0.56, 0.64, 0.12, 48),
+      new THREE.MeshStandardMaterial({ color: '#fff8e7', roughness: 0.35, metalness: 0.05 }),
     );
     pedestal.position.y = -0.06;
     this.scene.add(pedestal);
-    this.ring = new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.025, 12, 64).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#7a5cff' }));
-    this.ring.position.y = 0.005;
+    const goldBase = new THREE.Mesh(
+      new THREE.TorusGeometry(0.6, 0.022, 12, 64).rotateX(Math.PI / 2),
+      new THREE.MeshStandardMaterial({ color: '#F5B82E', metalness: 0.78, roughness: 0.25 }),
+    );
+    goldBase.position.y = -0.01;
+    this.scene.add(goldBase);
+    this.ring = new THREE.Mesh(new THREE.TorusGeometry(0.56, 0.026, 12, 64).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#7a5cff' }));
+    this.ring.position.y = 0.006;
     this.scene.add(this.ring);
-    this.camera = new THREE.PerspectiveCamera(30, 1, 0.1, 20);
-    this.camera.position.set(0, 1.0, 3.3);
+    this.camera = new THREE.PerspectiveCamera(29, 1, 0.1, 20);
+    this.camera.position.set(0, 0.98, 3.22);
     this.camera.lookAt(0, 0.62, 0);
     this.clock = new THREE.Clock();
     this.model = null;

@@ -153,9 +153,11 @@ const KINDS = Object.keys(BUILDERS);
 
 // Nền lát vỉa hè dưới mỗi công trình: [rộng, sâu] theo đơn vị gốc của công trình (nhân với tỉ lệ).
 const LOT_PAD = {
-  bigBen: [2.5, 1.2], eiffel: [1.5, 1.5], liberty: [1.7, 1.7], lighthouse: [1.7, 0.9], curved: [1.3, 1.4], ringOrange: [1.2, 1.3],
-  ringPink: [1.2, 1.3], skyBlue: [0.95, 0.85], skyViolet: [0.95, 0.85], skyGreen: [0.95, 0.85], redHotel: [1.4, 1.0], villa: [1.3, 1.1],
-  villaBlue: [1.3, 1.1], cityHall: [1.7, 1.1], shops: [1.7, 1.0], towerOrange: [1.1, 0.9], towerYellow: [1.1, 0.9],
+  bigBen: [2.5, 1.2], eiffel: [1.5, 1.5], liberty: [1.7, 1.7], lighthouse: [1.7, 0.9], curved: [1.35, 1.4],
+  notreDame: [1.35, 1.45], pagoda: [1.25, 1.25], templeGate: [1.4, 1.0],
+  ringOrange: [1.2, 1.3], ringPink: [1.2, 1.3], skyBlue: [0.95, 0.85], skyViolet: [0.95, 0.85],
+  skyGreen: [0.95, 0.85], redHotel: [1.4, 1.0], villa: [1.3, 1.1], villaBlue: [1.3, 1.1],
+  cityHall: [1.7, 1.1], shops: [1.7, 1.0], towerOrange: [1.1, 0.9], towerYellow: [1.1, 0.9],
   towerPink: [1.1, 0.9], towerMint: [1.1, 0.9], fountain: [1.4, 1.4],
 };
 
@@ -167,36 +169,46 @@ function lotPad(kind, k) {
   return [w * k + 0.2, d * k + 0.2];
 }
 
-/** Dựng các lô nhà trong thành phố. Trả về Group (gộp tĩnh được). */
+/** Dựng các lô nhà trong thành phố đảo Việt Nam. Trả về Group (gộp tĩnh được). */
 export function buildCityBlocks() {
   const root = new THREE.Group();
   const lots = [
-    // [x, z, rotY, kind, scale]   — mặt tiền (-z cục bộ) quay ra đường gần nhất
-    // hàng sau (nhìn ra đường phía Bắc)
-    [-5.1, -5.3, 0, 'eiffel', 1.0], [-2.8, -5.35, 0, 'curved', 0.88], [0.75, -5.6, 0, 'bigBen', 0.88],
-    [3.0, -5.35, 0, 'ringOrange', 0.9], [5.1, -5.3, 0, 'skyBlue', 0.9],
-    // cột trái
-    [-5.45, -3.0, Math.PI / 2, 'towerPink', 0.82], [-5.45, -1.2, Math.PI / 2, 'villa', 0.85],
-    [-5.45, 0.9, Math.PI / 2, 'cityHall', 0.72], [-5.45, 3.0, Math.PI / 2, 'shops', 0.8],
-    // cột phải (đu quay đặt riêng)
-    [5.45, -3.0, -Math.PI / 2, 'redHotel', 0.8], [5.45, 1.8, -Math.PI / 2, 'skyViolet', 0.78],
-    [5.45, 3.4, -Math.PI / 2, 'towerMint', 0.8],
-    // hai góc phía trước
-    [-5.3, 5.3, Math.PI, 'liberty', 0.95], [5.3, 5.3, Math.PI, 'lighthouse', 0.9],
-    // vòng trong
-    [-3.55, -3.3, 0, 'towerYellow', 0.78], [3.55, -3.3, 0, 'skyGreen', 0.8],
-    [-3.45, -1.3, 0, 'villaBlue', 0.62], [3.45, -1.4, 0, 'towerOrange', 0.7],
-    [-2.6, 2.2, Math.PI, 'fountain', 0.75], [2.6, 2.2, Math.PI, 'mall', 0.5],
+    // [x, z, rotY, kind, scale] — mặt tiền (-z cục bộ) quay ra đường gần nhất
+    // Hàng Bắc (Toà thị chính Đông Dương, Tháp Bitexco, Cao ốc kính, Khách sạn mái ngói)
+    [-5.0, -5.25, 0, 'skyGreen', 0.92],
+    [-2.1, -5.35, 0, 'cityHall', 0.98],
+    [1.1, -5.25, 0, 'curved', 1.05],
+    [3.35, -5.25, 0, 'skyBlue', 0.96],
+    [5.2, -5.2, 0, 'villa', 0.86],
+    // Cột Tây (Nhà thờ Đức Bà, Biệt thự mái ngói, Phố thương mại)
+    [-5.35, -2.7, Math.PI / 2, 'towerMint', 0.84],
+    [-5.25, 0.15, Math.PI / 2, 'notreDame', 0.98],
+    [-5.35, 2.95, Math.PI / 2, 'shops', 0.82],
+    // Cột Đông (Tháp Chùa Đỏ nhiều tầng, Khách sạn mái đỏ, Đu quay)
+    [5.25, -2.55, -Math.PI / 2, 'pagoda', 0.98],
+    [5.35, 2.0, -Math.PI / 2, 'redHotel', 0.82],
+    [5.1, 4.4, -Math.PI / 4, 'pagoda', 0.78],
+    // Hàng Nam bên bờ kênh (Cổng Tam Quan / Đền cổ, Cao ốc hiện đại, Hải đăng)
+    [-5.1, 5.1, Math.PI, 'villa', 0.88],
+    [0.0, 5.25, Math.PI, 'templeGate', 0.96],
+    [2.65, 5.1, Math.PI, 'skyViolet', 0.86],
+    // Vòng trong quanh quảng trường Hoa Sen
+    [-3.45, -3.2, 0, 'villa', 0.76],
+    [3.45, -3.2, 0, 'towerYellow', 0.78],
+    [-3.45, -1.2, Math.PI / 2, 'villaBlue', 0.66],
+    [3.45, -1.2, -Math.PI / 2, 'ringOrange', 0.74],
+    [2.65, 2.25, Math.PI, 'towerOrange', 0.72],
+    [-2.65, 2.25, Math.PI, 'fountain', 0.72],
   ];
   const rand = rng(2024);
-  const paving = stoneMaterial('#E2D3B2', { repeat: 2, roughness: 0.8 });
+  const paving = stoneMaterial('#EFE3C8', { repeat: 2, roughness: 0.75 });
   for (const [x, z, rotY, kind, s] of lots) {
     const lot = new THREE.Group();
     lot.position.set(x, 0.08, z);
     lot.rotation.y = rotY;
     const [pw, pd] = lotPad(kind, s);
     box(lot, paving, 0, 0, 0, pw, 0.025, pd); // nền lát đá/vỉa hè
-    box(lot, mat('#CDBF9F', { roughness: 0.8 }), 0, 0, 0, pw + 0.07, 0.012, pd + 0.07); // viền bó vỉa
+    box(lot, mat('#D8C8A8', { roughness: 0.75 }), 0, 0, 0, pw + 0.07, 0.012, pd + 0.07); // viền bó vỉa
     const b = lotBuilder(kind)(rand);
     b.scale.setScalar(s);
     b.position.y = 0.025;

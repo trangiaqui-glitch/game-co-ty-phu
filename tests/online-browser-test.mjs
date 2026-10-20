@@ -86,7 +86,7 @@ try {
   await Promise.all([A, B].map((b) => b.waitFor(`__coTyPhu.mode === 'online-game' && !!__coTyPhu.session`, 60000, 'vào ván')));
   const seats = await Promise.all([A, B].map((b) => b.evaluate(`({ seat: __coTyPhu.session.seat, players: __coTyPhu.game.players.list.map((p) => p.name + '/' + p.characterId), glb: [...__coTyPhu.characters.values()].map((c) => c.source) })`)));
   check(seats[0].seat === 0 && seats[1].seat === 1 && seats[0].players.join() === seats[1].players.join(), 'Cả hai vào cùng một ván, đúng ghế', seats[0].players.join(', '));
-  check(seats.every((s) => s.glb.every((x) => x === 'glb')), 'Nhân vật 3D GLB hiển thị trên bàn cờ ở cả hai thiết bị');
+  check(seats.every((s) => s.glb.every((x) => x === 'glb' || x === 'toon')), 'Nhân vật 3D hiển thị trên bàn cờ ở cả hai thiết bị');
 
   // Chơi bằng nút giao diện
   let compared = 0;

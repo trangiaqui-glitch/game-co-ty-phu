@@ -18,12 +18,12 @@ export class SceneManager {
     container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.Fog('#dcebf5', 75, 170);
+    this.scene.fog = new THREE.Fog('#dff4f8', 82, 185);
 
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 400);
 
-    // Bầu trời có mặt trời thật: vừa là nền vừa là ánh sáng môi trường để kính, sơn xe, kim loại phản chiếu.
-    const sunDir = new THREE.Vector3(14, 28, 16).normalize();
+    // Bầu trời ấm áp rực rỡ + phản xạ mặt nước xanh ngọc phía dưới để kính, mái ngói, sơn bóng và vàng kim nổi bật.
+    const sunDir = new THREE.Vector3(15, 29, 17).normalize();
     const dome = new THREE.Mesh(new THREE.SphereGeometry(300, 32, 16), this._skyMaterial(sunDir, false));
     dome.renderOrder = -10;
     this.scene.add(dome);
@@ -47,7 +47,7 @@ export class SceneManager {
     this.renderer.setAnimationLoop(() => this._tick());
   }
 
-  // Bầu trời gradient + quầng và đĩa mặt trời. `linear` = xuất màu tuyến tính (dùng làm môi trường PBR).
+  // Bầu trời gradient + quầng mặt trời ấm + ánh phản chiếu nước xanh ngọc. `linear` = xuất màu tuyến tính (dùng làm môi trường PBR).
   _skyMaterial(sunDir, linear) {
     return new THREE.ShaderMaterial({
       side: THREE.BackSide,
@@ -60,41 +60,41 @@ export class SceneManager {
         void main(){
           vec3 d = normalize(vDir);
           float h = d.y;
-          vec3 horizon = vec3(0.93, 0.95, 0.96);
-          vec3 mid = vec3(0.58, 0.78, 0.96);
-          vec3 top = vec3(0.17, 0.42, 0.82);
-          vec3 col = mix(horizon, mid, smoothstep(0.0, 0.22, h));
-          col = mix(col, top, smoothstep(0.18, 0.85, h));
-          col = mix(col, vec3(0.78, 0.84, 0.82), smoothstep(0.0, -0.35, h));
+          vec3 horizon = vec3(0.98, 0.95, 0.88);
+          vec3 mid = vec3(0.46, 0.82, 0.96);
+          vec3 top = vec3(0.14, 0.48, 0.86);
+          vec3 col = mix(horizon, mid, smoothstep(-0.02, 0.24, h));
+          col = mix(col, top, smoothstep(0.2, 0.88, h));
+          col = mix(col, vec3(0.18, 0.76, 0.78), smoothstep(0.0, -0.38, h));
           float s = max(dot(d, sunDir), 0.0);
-          col += vec3(1.0, 0.86, 0.62) * (pow(s, 900.0) * 6.0 + pow(s, 24.0) * 0.35 + pow(s, 5.0) * 0.12);
-          if (linear > 0.5) col = pow(col, vec3(2.2)) * 1.1;
+          col += vec3(1.0, 0.88, 0.62) * (pow(s, 900.0) * 6.0 + pow(s, 22.0) * 0.38 + pow(s, 4.5) * 0.14);
+          if (linear > 0.5) col = pow(col, vec3(2.2)) * 1.12;
           gl_FragColor = vec4(col, 1.0);
         }`,
     });
   }
 
   _setupLights() {
-    this.hemi = new THREE.HemisphereLight('#cfe6ff', '#d9c7a3', 0.5);
+    this.hemi = new THREE.HemisphereLight('#e4f5ff', '#ebd2ab', 0.62);
     this.scene.add(this.hemi);
 
-    this.sun = new THREE.DirectionalLight('#fff0d6', 2.8);
-    this.sun.position.set(14, 28, 16);
+    this.sun = new THREE.DirectionalLight('#fff2d6', 2.85);
+    this.sun.position.set(15, 29, 17);
     this.sun.target.position.set(0, 0, 0);
     const s = this.sun.shadow;
-    s.camera.left = -19;
-    s.camera.right = 19;
-    s.camera.top = 19;
-    s.camera.bottom = -19;
+    s.camera.left = -20;
+    s.camera.right = 20;
+    s.camera.top = 20;
+    s.camera.bottom = -20;
     s.camera.near = 5;
-    s.camera.far = 80;
+    s.camera.far = 82;
     s.bias = -0.0004;
-    s.radius = 3;
+    s.radius = 3.2;
     s.normalBias = 0.025;
     this.scene.add(this.sun, this.sun.target);
 
-    const rim = new THREE.DirectionalLight('#b9d4ff', 0.5);
-    rim.position.set(-18, 12, -14);
+    const rim = new THREE.DirectionalLight('#8be8e5', 0.58);
+    rim.position.set(-18, 13, -15);
     this.scene.add(rim);
   }
 

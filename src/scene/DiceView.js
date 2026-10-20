@@ -23,7 +23,7 @@ const SIZE = 1.0;
 const REST = [new THREE.Vector3(-0.85, SIZE / 2 + 0.08, 0.7), new THREE.Vector3(0.95, SIZE / 2 + 0.08, 1.3)];
 const TEX = 256;
 
-/** Vẽ một mặt xúc xắc: màu ngà có gradient nhẹ, viền mềm, chấm lõm có bóng. `bump` = bản đồ độ cao cho chấm lõm. */
+/** Vẽ một mặt xúc xắc: màu ngà ấm, viền vàng kim mảnh, chấm lõm bóng đẹp. `bump` = bản đồ độ cao cho chấm lõm. */
 function faceCanvas(value, bump) {
   const c = document.createElement('canvas');
   c.width = TEX;
@@ -33,14 +33,20 @@ function faceCanvas(value, bump) {
     g.fillStyle = '#fff';
     g.fillRect(0, 0, TEX, TEX);
   } else {
-    const bg = g.createRadialGradient(TEX * 0.4, TEX * 0.35, TEX * 0.1, TEX / 2, TEX / 2, TEX * 0.78);
+    const bg = g.createRadialGradient(TEX * 0.38, TEX * 0.32, TEX * 0.08, TEX / 2, TEX / 2, TEX * 0.78);
     bg.addColorStop(0, '#FFFFFF');
-    bg.addColorStop(0.65, '#FFF8E8');
-    bg.addColorStop(1, '#F1E3C6');
+    bg.addColorStop(0.6, '#FFF9EB');
+    bg.addColorStop(1, '#ECD7B0');
     g.fillStyle = bg;
     g.fillRect(0, 0, TEX, TEX);
+    // Viền vàng kim mảnh tạo cảm giác xúc xắc cao cấp
+    g.strokeStyle = 'rgba(218, 165, 32, 0.38)';
+    g.lineWidth = 6;
+    g.beginPath();
+    g.roundRect(14, 14, TEX - 28, TEX - 28, 28);
+    g.stroke();
   }
-  const r = value === 1 ? TEX * 0.15 : TEX * 0.105;
+  const r = value === 1 ? TEX * 0.155 : TEX * 0.106;
   for (const [x, y] of PIPS[value]) {
     const cx = x * TEX;
     const cy = y * TEX;
@@ -51,10 +57,11 @@ function faceCanvas(value, bump) {
       d.addColorStop(1, '#fff');
       g.fillStyle = d;
     } else {
-      const red = value === 1;
-      const d = g.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
-      d.addColorStop(0, red ? '#FF6B6B' : '#5B4B86');
-      d.addColorStop(1, red ? '#C62828' : '#1B1432');
+      const red = value === 1 || value === 4;
+      const d = g.createRadialGradient(cx - r * 0.28, cy - r * 0.28, r * 0.08, cx, cy, r);
+      d.addColorStop(0, red ? '#FF5E62' : '#2E4077');
+      d.addColorStop(0.75, red ? '#D62828' : '#1B254B');
+      d.addColorStop(1, red ? '#9B111E' : '#0F1630');
       g.fillStyle = d;
     }
     g.beginPath();
@@ -69,7 +76,7 @@ function faceMaterial(value) {
   map.colorSpace = THREE.SRGBColorSpace;
   map.anisotropy = 4;
   const bumpMap = new THREE.CanvasTexture(faceCanvas(value, true));
-  return new THREE.MeshStandardMaterial({ map, bumpMap, bumpScale: 2.2, roughness: 0.25, metalness: 0.03 });
+  return new THREE.MeshStandardMaterial({ map, bumpMap, bumpScale: 2.3, roughness: 0.2, metalness: 0.05 });
 }
 
 export class DiceView {

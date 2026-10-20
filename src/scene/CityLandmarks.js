@@ -243,22 +243,289 @@ export function buildFerrisWheel() {
   return g;
 }
 
-// ============================================================== toà nhà màu sắc
-// Tháp kính cong màu xanh ngọc (như toà "hoa sen" ở góc trái ảnh mẫu).
+// ============================================================== toà nhà màu sắc & điểm nhấn Việt Nam
+// Tháp kính cong Bitexco có sân đỗ trực thăng nhô ra bên hông (như ảnh tham chiếu).
 export function buildCurvedTower() {
   const g = new THREE.Group();
-  const teal = facadeMaterial('#8FD8D0', { cols: 14, rows: 11, window: '#1F9EAA', frame: '#e6fffb', glassy: true });
-  const band = paint('#FFFFFF', { roughness: 0.3 });
-  cyl(g, stoneMaterial('#CFD8DC', { repeat: 1 }), 0, 0, 0, 0.56, 0.06, 28);
-  frustum(g, teal, 0, 0.06, 0, 0.42, 0.34, 1.0, 32);
-  frustum(g, teal, 0, 1.06, 0, 0.34, 0.27, 0.7, 32);
-  frustum(g, teal, 0, 1.76, 0, 0.27, 0.2, 0.5, 32);
-  for (const [y, r] of [[0.5, 0.39], [1.06, 0.355], [1.76, 0.285], [2.26, 0.21]]) cyl(g, band, 0, y, 0, r, 0.04, 32);
-  hemi(g, glass('#7fe3e0'), 0, 2.3, 0, 0.2, 0.9);
-  cyl(g, paint('#d0d4da', { metalness: 0.8 }), 0, 2.45, 0, 0.012, 0.4, 6);
-  sphere(g, paint('#ff3030', { emissive: '#ff0000', emissiveIntensity: 1.2 }), 0, 2.86, 0, 0.022);
-  // khối thấp ở chân
-  box(g, facadeMaterial('#FFFFFF', { cols: 4, rows: 1, window: '#7fd0ff' }), 0, 0.06, -0.5, 0.8, 0.22, 0.25);
+  const skyGlass = facadeMaterial('#5FB8F2', { cols: 14, rows: 14, window: '#1B6DC1', frame: '#d8f3ff', glassy: true });
+  const band = paint('#E8F6FF', { roughness: 0.25, metalness: 0.3 });
+  cyl(g, stoneMaterial('#EAE2D3', { repeat: 1 }), 0, 0, 0, 0.58, 0.08, 28);
+  frustum(g, skyGlass, 0, 0.08, 0, 0.44, 0.38, 1.05, 32);
+  frustum(g, skyGlass, 0, 1.13, 0, 0.38, 0.3, 0.85, 32);
+  frustum(g, skyGlass, 0, 1.98, 0, 0.3, 0.19, 0.68, 32);
+  for (const [y, r] of [[0.55, 0.42], [1.13, 0.39], [1.68, 0.34], [1.98, 0.31], [2.42, 0.23]]) {
+    cyl(g, band, 0, y, 0, r, 0.035, 32);
+  }
+  // Sân đỗ trực thăng (helipad) vươn ra bên hông tầng cao
+  const heliY = 1.88;
+  cyl(g, paint('#DCE6F2', { metalness: 0.45, roughness: 0.25 }), -0.42, heliY, 0.05, 0.24, 0.04, 28);
+  cyl(g, paint('#2B6CB0', { roughness: 0.3 }), -0.42, heliY + 0.041, 0.05, 0.19, 0.01, 24);
+  cyl(g, paint('#FFD54F'), -0.42, heliY + 0.045, 0.05, 0.14, 0.008, 24);
+  beam(g, band, [-0.18, heliY - 0.18, 0.05], [-0.46, heliY, 0.05], 0.03);
+  beam(g, band, [-0.18, heliY - 0.14, 0.12], [-0.4, heliY, 0.14], 0.022);
+  beam(g, band, [-0.18, heliY - 0.14, -0.02], [-0.4, heliY, -0.04], 0.022);
+
+  // Đỉnh tháp vát chéo + đèn báo
+  hemi(g, glass('#63C5FA'), 0, 2.66, 0, 0.19, 0.95);
+  cyl(g, paint('#d0d4da', { metalness: 0.8 }), 0, 2.8, 0, 0.012, 0.38, 6);
+  sphere(g, paint('#ff3030', { emissive: '#ff0000', emissiveIntensity: 1.2 }), 0, 3.2, 0, 0.024);
+  // Khối đế thương mại ở chân
+  box(g, facadeMaterial('#F8FAFC', { cols: 4, rows: 2, window: '#58b4f5', glassy: true }), 0, 0.08, -0.46, 0.84, 0.28, 0.32);
+  box(g, gold(), 0, 0.36, -0.46, 0.88, 0.03, 0.35);
+  return g;
+}
+
+// Nhà thờ Đức Bà: tường gạch cam đất ấm, cửa sổ hoa hồng, hai tháp chuông chóp nhọn.
+export function buildNotreDame() {
+  const g = new THREE.Group();
+  const brick = facadeMaterial('#E87A52', { cols: 3, rows: 3, window: '#FFF3D1', frame: '#FDE8D0', brick: true });
+  const trim = paint('#FFF3E0', { roughness: 0.5 });
+  const roof = roofMaterial('#D64527');
+  const spireMat = paint('#8CA0B8', { roughness: 0.35, metalness: 0.35 });
+
+  // Thân chính nhà thờ + mái ngói đỏ
+  box(g, stoneMaterial('#E6DCC8', { repeat: 2 }), 0, 0, 0, 1.24, 0.07, 1.35);
+  box(g, brick, 0, 0.07, 0.12, 0.96, 0.72, 0.95);
+  g.add(part(GEO.prism(), roof, [0, 0.79 + 0.22, 0.12], [0.52, 0.22, 1.0]));
+
+  // Hai tháp chuông phía trước
+  for (const side of [-1, 1]) {
+    const x = side * 0.34;
+    box(g, brick, x, 0.07, -0.35, 0.34, 1.12, 0.34);
+    box(g, trim, x, 0.62, -0.35, 0.37, 0.04, 0.37);
+    box(g, trim, x, 0.92, -0.35, 0.37, 0.04, 0.37);
+    box(g, trim, x, 1.19, -0.35, 0.38, 0.05, 0.38);
+    // Chóp nhọn tháp chuông
+    pyr(g, spireMat, x, 1.24, -0.35, 0.34, 0.68);
+    cyl(g, gold(), x, 1.92, -0.35, 0.01, 0.14, 6);
+  }
+  // Cửa sổ hoa hồng tròn ở giữa mặt tiền + cổng vòm
+  cyl(g, trim, 0, 0.56, -0.37, 0.12, 0.03, 20);
+  g.add(part(GEO.cyl(20), trim, [0, 0.56, -0.365], [0.12, 0.02, 0.12], [Math.PI / 2, 0, 0]));
+  g.add(part(GEO.cyl(20), glass('#FFE082'), [0, 0.56, -0.372], [0.09, 0.02, 0.09], [Math.PI / 2, 0, 0]));
+  box(g, paint('#6D3B24'), 0, 0.07, -0.37, 0.2, 0.28, 0.04);
+  for (const side of [-1, 1]) box(g, paint('#6D3B24'), side * 0.34, 0.07, -0.525, 0.12, 0.22, 0.03);
+  return g;
+}
+
+// Chùa tháp Việt Nam nhiều tầng mái cong đỏ vàng (Chùa Trấn Quốc / Thiên Mụ).
+export function buildVietnamesePagoda() {
+  const g = new THREE.Group();
+  const redWall = paint('#B82920', { roughness: 0.45 });
+  const roof = roofMaterial('#D83A26');
+  const goldMat = gold();
+  const stone = stoneMaterial('#EBE1CE', { repeat: 1 });
+
+  // Bệ đá + bậc tam cấp
+  box(g, stone, 0, 0, 0, 1.15, 0.1, 1.15);
+  box(g, goldMat, 0, 0.1, 0, 1.02, 0.03, 1.02);
+  for (let i = 0; i < 3; i++) {
+    box(g, stone, 0, i * 0.03, -0.6 - i * 0.06, 0.36, 0.03, 0.08);
+  }
+
+  // 4 tầng tháp với mái đao cong nhô rộng
+  let y = 0.13;
+  const tiers = [
+    [0.72, 0.38, 1.08],
+    [0.58, 0.32, 0.9],
+    [0.45, 0.28, 0.74],
+    [0.34, 0.24, 0.58],
+  ];
+  tiers.forEach(([w, h, rw]) => {
+    box(g, redWall, 0, y, 0, w, h, w);
+    box(g, goldMat, 0, y + h * 0.5, -w * 0.505, w * 0.45, h * 0.45, 0.015);
+    // Mái ngói + riềm vàng kim
+    box(g, goldMat, 0, y + h - 0.01, 0, rw * 0.96, 0.028, rw * 0.96);
+    pyr(g, roof, 0, y + h + 0.015, 0, rw, 0.18);
+    // Đầu đao uốn cong ở 4 góc mái
+    for (const sx of [-1, 1]) {
+      for (const sz of [-1, 1]) {
+        g.add(part(GEO.cone(8), goldMat, [sx * rw * 0.46, y + h + 0.07, sz * rw * 0.46], [0.035, 0.09, 0.035], [-sz * 0.4, 0, sx * 0.4]));
+      }
+    }
+    y += h + 0.16;
+  });
+  // Hồ lô / Búp sen vàng trên đỉnh
+  cyl(g, goldMat, 0, y, 0, 0.035, 0.26, 12);
+  sphere(g, goldMat, 0, y + 0.14, 0, 0.06);
+  sphere(g, goldMat, 0, y + 0.26, 0, 0.04);
+  return g;
+}
+
+// Đền cổ / Cổng Tam Quan mái ngói cong bên bờ nước, có bậc đá xuống bến.
+export function buildTempleGate() {
+  const g = new THREE.Group();
+  const stone = stoneMaterial('#E8DEC8', { repeat: 1 });
+  const pillar = paint('#B7281E', { roughness: 0.4 });
+  const roof = roofMaterial('#D63A24');
+  const goldMat = gold();
+
+  // Bệ đá và bậc thềm xuống nước
+  box(g, stone, 0, 0, 0, 1.32, 0.12, 0.86);
+  for (let i = 0; i < 4; i++) {
+    box(g, stone, 0, i * 0.03, -0.46 - (3 - i) * 0.07, 0.52, 0.035, 0.08);
+  }
+  // Hàng cột đỏ sơn son thếp vàng
+  for (const x of [-0.48, -0.18, 0.18, 0.48]) {
+    for (const z of [-0.24, 0.24]) {
+      cyl(g, pillar, x, 0.12, z, 0.045, 0.44, 14);
+      cyl(g, goldMat, x, 0.12, z, 0.055, 0.04, 14);
+    }
+  }
+  // Tường hậu cung và hoành phi vàng
+  box(g, paint('#FFF2D6'), 0, 0.12, 0.06, 0.88, 0.42, 0.34);
+  box(g, pillar, 0, 0.12, -0.12, 0.24, 0.3, 0.03);
+  box(g, goldMat, 0, 0.46, -0.25, 0.48, 0.09, 0.03);
+  // Mái ngói hai tầng cổ diêm
+  box(g, goldMat, 0, 0.55, 0, 1.38, 0.03, 0.88);
+  pyr(g, roof, 0, 0.58, 0, 1.46, 0.2, 0.94);
+  box(g, paint('#B7281E'), 0, 0.72, 0, 0.84, 0.14, 0.52);
+  box(g, goldMat, 0, 0.85, 0, 0.98, 0.025, 0.64);
+  pyr(g, roof, 0, 0.87, 0, 1.06, 0.22, 0.7);
+  sphere(g, goldMat, 0, 1.1, 0, 0.045);
+  return g;
+}
+
+// Đài phun nước Hoa Sen Vàng ở chính giữa quảng trường trung tâm (biểu tượng chủ đạo của bàn cờ).
+export function buildGoldenLotusFountain() {
+  const g = new THREE.Group();
+  g.userData.dynamic = true;
+  const stone = stoneMaterial('#F4EBDC', { repeat: 2, roughness: 0.6 });
+  const goldMat = new THREE.MeshPhysicalMaterial({
+    color: '#FFCA28',
+    metalness: 0.82,
+    roughness: 0.2,
+    emissive: '#8A5600',
+    emissiveIntensity: 0.22,
+    clearcoat: 0.8,
+  });
+  const water = new THREE.MeshPhysicalMaterial({
+    color: '#18C9D4',
+    roughness: 0.1,
+    metalness: 0.1,
+    clearcoat: 1,
+    emissive: '#086972',
+    emissiveIntensity: 0.2,
+  });
+
+  // Bậc thềm tròn lát đá + thành hồ chạm vàng
+  cyl(g, stone, 0, 0, 0, 1.85, 0.06, 48);
+  cyl(g, goldMat, 0, 0.06, 0, 1.66, 0.04, 48);
+  cyl(g, stone, 0, 0.08, 0, 1.62, 0.14, 48);
+  // Mặt nước xanh ngọc trong hồ + 8 tia nước nhỏ quanh thành
+  cyl(g, water, 0, 0.19, 0, 1.48, 0.04, 48);
+  cyl(g, goldMat, 0, 0.21, 0, 1.54, 0.03, 48);
+
+  // Đài đá tầng 2 ở giữa hồ
+  cyl(g, stone, 0, 0.2, 0, 0.78, 0.14, 36);
+  cyl(g, goldMat, 0, 0.33, 0, 0.82, 0.035, 36);
+  cyl(g, water, 0, 0.35, 0, 0.72, 0.03, 36);
+
+  // Bông Hoa Sen Vàng 3 tầng cánh nở rộ
+  const lotus = new THREE.Group();
+  lotus.position.set(0, 0.38, 0);
+  // Tầng cánh ngoài (10 cánh lớn xoè rộng)
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2;
+    const petal = new THREE.Group();
+    petal.rotation.y = a;
+    petal.add(part(GEO.sphere(), goldMat, [0, 0.16, 0.36], [0.16, 0.34, 0.065], [0.68, 0, 0]));
+    lotus.add(petal);
+  }
+  // Tầng cánh giữa (8 cánh ôm lên)
+  for (let i = 0; i < 8; i++) {
+    const a = ((i + 0.5) / 8) * Math.PI * 2;
+    const petal = new THREE.Group();
+    petal.rotation.y = a;
+    petal.add(part(GEO.sphere(), goldMat, [0, 0.28, 0.22], [0.14, 0.34, 0.06], [0.42, 0, 0]));
+    lotus.add(petal);
+  }
+  // Tầng cánh trong (6 cánh chụm quanh gương sen)
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const petal = new THREE.Group();
+    petal.rotation.y = a;
+    petal.add(part(GEO.sphere(), goldMat, [0, 0.38, 0.11], [0.11, 0.28, 0.05], [0.22, 0, 0]));
+    lotus.add(petal);
+  }
+  // Gương sen vàng phát sáng ở tâm
+  lotus.add(part(GEO.sphere(), paint('#FFE57F', { emissive: '#FFB300', emissiveIntensity: 0.65 }), [0, 0.42, 0], [0.13, 0.16, 0.13]));
+  g.add(lotus);
+
+  // Vòi phun nước lung linh quanh hoa sen
+  const jetMat = mat('#A7F3FF', { roughness: 0.08, transparent: true, opacity: 0.78, emissive: '#38BDF8', emissiveIntensity: 0.35 });
+  const jets = [];
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const j = part(GEO.cone(10), jetMat, [Math.cos(a) * 1.08, 0.36, Math.sin(a) * 1.08], [0.06, 0.32, 0.06], [Math.sin(a) * -0.25, 0, Math.cos(a) * 0.25]);
+    g.add(j);
+    jets.push({ mesh: j, phase: i * 0.8 });
+  }
+  g.userData.update = (t) => {
+    lotus.rotation.y = t * 0.15;
+    for (const j of jets) {
+      j.mesh.scale.y = 0.28 + Math.sin(t * 4.5 + j.phase) * 0.06;
+    }
+  };
+  return g;
+}
+
+// Cầu đá vòm nhỏ bắc qua kênh nước xanh ngọc, có lan can đá và đèn lồng ấm.
+export function buildArchedBridge() {
+  const g = new THREE.Group();
+  const stone = stoneMaterial('#F3EAD8', { repeat: 1, roughness: 0.65 });
+  const trim = paint('#DFD2B8', { roughness: 0.6 });
+  const lamp = paint('#FFF3B0', { emissive: '#FFCA28', emissiveIntensity: 0.85 });
+  const postMat = paint('#3E2723', { roughness: 0.5 });
+
+  // Nhịp cầu cong gồm 5 đoạn ghép tạo vòm mềm
+  const segs = [
+    [-0.56, 0.06, 0.26, 0.28],
+    [-0.28, 0.14, 0.14, 0.3],
+    [0, 0.18, 0, 0.34],
+    [0.28, 0.14, -0.14, 0.3],
+    [0.56, 0.06, -0.26, 0.28],
+  ];
+  for (const [x, y, rz, len] of segs) {
+    g.add(part(GEO.rbox(), stone, [x, y, 0], [len, 0.07, 0.68], [0, 0, rz]));
+    for (const sz of [-0.31, 0.31]) {
+      g.add(part(GEO.rbox(), trim, [x, y + 0.08, sz], [len, 0.09, 0.05], [0, 0, rz]));
+    }
+  }
+  // 4 trụ đầu cầu có đèn cầu vàng ấm
+  for (const sx of [-0.66, 0.66]) {
+    for (const sz of [-0.31, 0.31]) {
+      box(g, stone, sx, 0, sz, 0.11, 0.22, 0.11);
+      cyl(g, postMat, sx, 0.22, sz, 0.018, 0.18, 8);
+      sphere(g, lamp, sx, 0.42, sz, 0.048);
+    }
+  }
+  return g;
+}
+
+// Thuyền buồm đỏ truyền thống (vịnh Hạ Long / kênh thành phố).
+export function buildRedSailBoat(scale = 1) {
+  const g = new THREE.Group();
+  const wood = paint('#8B4E24', { roughness: 0.55 });
+  const deck = paint('#BA7A44', { roughness: 0.6 });
+  const sailMat = paint('#E53935', { roughness: 0.45, emissive: '#5c0c0c', emissiveIntensity: 0.12 });
+  const rib = gold();
+
+  // Thân thuyền gỗ
+  g.add(part(GEO.rbox(), wood, [0, 0.04, 0], [0.58, 0.09, 0.22]));
+  g.add(part(GEO.cone(4), wood, [0.32, 0.055, 0], [0.14, 0.14, 0.15], [0, Math.PI / 4, -Math.PI / 2]));
+  g.add(part(GEO.cone(4), wood, [-0.31, 0.055, 0], [0.13, 0.12, 0.14], [0, Math.PI / 4, Math.PI / 2]));
+  box(g, deck, -0.06, 0.085, 0, 0.24, 0.06, 0.16);
+
+  // Hai cánh buồm đỏ hình quạt
+  for (const [mx, mh, sw, sh] of [[0.06, 0.46, 0.24, 0.34], [-0.16, 0.36, 0.18, 0.26]]) {
+    cyl(g, wood, mx, 0.08, 0, 0.012, mh, 8);
+    g.add(part(GEO.rbox(), sailMat, [mx - sw * 0.35, 0.14 + sh * 0.5, 0], [sw, sh, 0.016], [0, 0.12, 0.08]));
+    for (let k = 0; k < 3; k++) {
+      g.add(part(GEO.box(), rib, [mx - sw * 0.35, 0.18 + k * (sh * 0.32), 0], [sw * 1.02, 0.01, 0.02], [0, 0.12, 0.08]));
+    }
+  }
+  g.scale.setScalar(scale);
   return g;
 }
 
@@ -269,7 +536,7 @@ export function buildRingTower(color = '#F39C34', accent = '#FFF3E0') {
   const ring = paint(accent, { roughness: 0.4 });
   let y = 0;
   const radii = [0.42, 0.4, 0.37, 0.34, 0.3, 0.26];
-  radii.forEach((r, i) => {
+  radii.forEach((r) => {
     cyl(g, drum, 0, y, 0, r, 0.3, 28);
     cyl(g, ring, 0, y + 0.3, 0, r + 0.05, 0.035, 28);
     y += 0.335;
@@ -334,20 +601,27 @@ export function buildVilla(wallColor = '#FFE4B5', roofColor = '#C0392B') {
   return g;
 }
 
-// Toà thị chính có mái vòm vàng (màu trắng/xanh).
+// Toà thị chính Đông Dương (UBND / Bưu điện): tường kem vàng, mái ngói đỏ, tháp đồng hồ ở giữa như ảnh mẫu.
 export function buildCityHall() {
   const g = new THREE.Group();
-  const stone = stoneMaterial('#F4EFE4', { repeat: 2, veins: true });
-  const wall = facadeMaterial('#F7F1E3', { cols: 7, rows: 2, window: '#6fb7e8', frame: '#ffffff' });
-  box(g, stoneMaterial('#CFC6B4', { repeat: 2 }), 0, 0, 0, 1.5, 0.08, 0.9);
-  box(g, wall, 0, 0.08, 0.1, 1.3, 0.55, 0.55);
-  for (let i = 0; i < 6; i++) cyl(g, stone, -0.5 + i * 0.2, 0.08, -0.22, 0.045, 0.5, 14);
-  box(g, stone, 0, 0.58, -0.02, 1.34, 0.07, 0.72);
-  g.add(part(GEO.prism(), stone, [0, 0.76, -0.02], [0.52, 0.18, 0.74]));
-  cyl(g, wall, 0, 0.62, 0.12, 0.3, 0.3, 24);
-  cyl(g, paint('#D4A017', { metalness: 0.7, roughness: 0.3 }), 0, 0.92, 0.12, 0.33, 0.04, 24);
-  hemi(g, new THREE.MeshPhysicalMaterial({ color: '#2E86DE', roughness: 0.1, metalness: 0.3, clearcoat: 1 }), 0, 0.96, 0.12, 0.3, 1.0);
-  cyl(g, gold(), 0, 1.24, 0.12, 0.012, 0.22, 6);
+  const stone = stoneMaterial('#F7EFE0', { repeat: 2, veins: true });
+  const wall = facadeMaterial('#FFE9B5', { cols: 7, rows: 2, window: '#5aa9e6', frame: '#ffffff' });
+  const roof = roofMaterial('#D94326');
+  box(g, stoneMaterial('#DFD4BE', { repeat: 2 }), 0, 0, 0, 1.62, 0.08, 0.96);
+  box(g, wall, 0, 0.08, 0.08, 1.46, 0.58, 0.58);
+  // Hàng cột trắng mặt tiền
+  for (let i = 0; i < 6; i++) cyl(g, stone, -0.55 + i * 0.22, 0.08, -0.24, 0.042, 0.54, 14);
+  box(g, stone, 0, 0.62, 0.04, 1.52, 0.06, 0.72);
+  // Mái ngói đỏ chạy ngang + hai đầu hồi
+  g.add(part(GEO.prism(), roof, [0, 0.68 + 0.18, 0.08], [0.36, 0.18, 1.5]));
+  // Tháp đồng hồ trung tâm
+  box(g, wall, 0, 0.66, -0.05, 0.44, 0.42, 0.44);
+  const f = part(clockGeo, clockMaterial(), [0, 0.88, -0.275], [0.13, 0.13, 1], [0, Math.PI, 0]);
+  f.userData.dynamic = false;
+  g.add(f);
+  pyr(g, roof, 0, 1.08, -0.05, 0.52, 0.28);
+  cyl(g, gold(), 0, 1.36, -0.05, 0.014, 0.22, 8);
+  sphere(g, paint('#E53935', { emissive: '#FF1744', emissiveIntensity: 0.7 }), 0, 1.59, -0.05, 0.032);
   return g;
 }
 
@@ -389,14 +663,14 @@ export function buildColorTower(wall = '#FF8A65', trim = '#BF360C', h = 1.7) {
   return g;
 }
 
-// Sân vận động nhỏ / quảng trường có đài phun nước.
+// Đài phun nước nhỏ ở góc công viên.
 export function buildFountain() {
   const g = new THREE.Group();
   cyl(g, stoneMaterial('#E6DDC8', { repeat: 1 }), 0, 0, 0, 0.62, 0.05, 32);
   cyl(g, stoneMaterial('#CFD8DC', { repeat: 1 }), 0, 0.05, 0, 0.42, 0.1, 28);
-  g.add(part(GEO.cyl(28), mat('#4FC3F7', { roughness: 0.08, metalness: 0.25 }), [0, 0.152, 0], [0.38, 0.012, 0.38]));
-  cyl(g, stoneMaterial('#CFD8DC', { repeat: 1 }), 0, 0.15, 0, 0.05, 0.28, 12);
-  cyl(g, stoneMaterial('#CFD8DC', { repeat: 1 }), 0, 0.4, 0, 0.16, 0.04, 20);
+  g.add(part(GEO.cyl(28), mat('#18C9D4', { roughness: 0.08, metalness: 0.25 }), [0, 0.152, 0], [0.38, 0.012, 0.38]));
+  cyl(g, gold(), 0, 0.15, 0, 0.06, 0.28, 12);
+  cyl(g, gold(), 0, 0.4, 0, 0.18, 0.04, 20);
   g.add(part(GEO.cone(12), mat('#81D4FA', { roughness: 0.08, transparent: true, opacity: 0.8 }), [0, 0.6, 0], [0.07, 0.34, 0.07]));
   return g;
 }
@@ -407,19 +681,23 @@ export const LANDMARKS = {
   liberty: buildLiberty,
   lighthouse: buildLighthouse,
   curved: buildCurvedTower,
+  notreDame: buildNotreDame,
+  pagoda: buildVietnamesePagoda,
+  templeGate: buildTempleGate,
   ringOrange: () => buildRingTower('#F39C34', '#FFF3E0'),
   ringPink: () => buildRingTower('#EC7BB0', '#FFF0F6'),
-  skyBlue: () => buildGlassSkyscraper('#9DB8F5', '#2F5FE0', 2.3, '#FFC83D'),
+  skyBlue: () => buildGlassSkyscraper('#68B5F5', '#1B6DC1', 2.35, '#FFC83D'),
   skyViolet: () => buildGlassSkyscraper('#C7B6F2', '#6A3FD1', 1.9, '#FF8A65'),
-  skyGreen: () => buildGlassSkyscraper('#A8E6C1', '#1FAE6B', 2.1, '#FFF176'),
+  skyGreen: () => buildGlassSkyscraper('#80DFC4', '#0F9D84', 2.1, '#FFE066'),
   redHotel: buildRedRoofHotel,
-  villa: () => buildVilla('#FFE4B5', '#C0392B'),
+  villa: () => buildVilla('#FFE4B5', '#D6382C'),
   villaBlue: () => buildVilla('#DDEEFF', '#2E6FD0'),
   cityHall: buildCityHall,
   shops: buildShopRow,
   towerOrange: () => buildColorTower('#FF8A65', '#BF360C', 1.7),
   towerYellow: () => buildColorTower('#FFD54F', '#E65100', 1.4),
   towerPink: () => buildColorTower('#F48FB1', '#AD1457', 1.9),
-  towerMint: () => buildColorTower('#80CBC4', '#00695C', 1.55),
+  towerMint: () => buildColorTower('#64D8CB', '#00695C', 1.55),
   fountain: buildFountain,
 };
+

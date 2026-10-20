@@ -355,15 +355,17 @@ export class LobbyUI {
   // ------------------------------------------------------------ character picker
   openCharacterPicker({ current, taken = new Set(), onPick }) {
     const modal = this.ui.openModal({
-      title: '👕 Chọn nhân vật',
+      title: '👕 Chọn nhân vật đại diện',
       className: 'char-modal',
       render: (body) => {
         body.innerHTML = `<div class="char-grid">${this.characters.map((c) => {
           const glb = this.modelStatus?.(c.id)?.status === 'loaded';
           const isTaken = taken.has(c.id);
           return `<button class="char-option ${c.id === current ? 'active' : ''}" data-char="${c.id}" style="--pc:${c.color}" ${isTaken ? 'disabled' : ''}>
-            <img src="${this.thumb(c.id)}" alt=""><b>${esc(c.name)}</b><small>${esc(c.title)}</small>
-            ${glb ? '<span class="tag glb">3D GLB</span>' : '<span class="tag tmp">TẠM</span>'}${isTaken ? '<span class="tag off">Đã có người chọn</span>' : ''}
+            <div class="char-thumb-wrap"><img src="${this.thumb(c.id)}" alt=""></div>
+            <b>${esc(c.name)}</b><small>${esc(c.title)}</small>
+            <span class="char-desc">${esc(c.description || '')}</span>
+            <div class="char-badges">${glb ? '<span class="tag glb">3D</span>' : '<span class="tag tmp">TẠM</span>'}${isTaken ? '<span class="tag off">Đã có người chọn</span>' : ''}</div>
           </button>`;
         }).join('')}</div>`;
         body.querySelectorAll('[data-char]').forEach((b) => {

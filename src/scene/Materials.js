@@ -528,11 +528,157 @@ export function leafMaterial() {
   leafMat = new THREE.MeshStandardMaterial({
     map: toTexture(map, { srgb: true, repeat: true }),
     bumpMap: toTexture(bump, { repeat: true }),
-    bumpScale: 2.0,
-    roughness: 0.8,
-    metalness: 0,
+    bumpScale: 1.8,
+    roughness: 0.65,
+    metalness: 0.02,
   });
   leafMat.map.repeat.set(3, 3);
   leafMat.bumpMap.repeat.set(3, 3);
   return leafMat;
 }
+
+// --------------------------------------------------------------- mặt nước xanh ngọc (sông / hồ / đảo)
+const waterCache = new Map();
+export function waterMaterial(repeat = 3) {
+  if (waterCache.has(repeat)) return waterCache.get(repeat);
+  const S = 256;
+  const rand = rng(518);
+  const map = canvas(S);
+  const bump = canvas(S);
+  const g = map.getContext('2d');
+  const gb = bump.getContext('2d');
+  const base = g.createLinearGradient(0, 0, S, S);
+  base.addColorStop(0, '#10B5C2');
+  base.addColorStop(0.5, '#19CBD4');
+  base.addColorStop(1, '#0D9FAF');
+  g.fillStyle = base;
+  g.fillRect(0, 0, S, S);
+  gb.fillStyle = gray(128);
+  gb.fillRect(0, 0, S, S);
+
+  // Vệt sáng caustics mềm và gợn nước
+  for (let i = 0; i < 65; i++) {
+    const x = rand() * S;
+    const y = rand() * S;
+    const rx = 14 + rand() * 34;
+    const ry = 6 + rand() * 14;
+    const ang = (rand() - 0.5) * 0.8;
+    const light = rand() < 0.65;
+    wrapped(g, S, S, x, y, Math.max(rx, ry), (px, py) => {
+      g.save();
+      g.translate(px, py);
+      g.rotate(ang);
+      g.fillStyle = light ? 'rgba(185, 255, 252, 0.16)' : 'rgba(6, 110, 130, 0.14)';
+      g.beginPath();
+      g.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+      g.fill();
+      g.restore();
+
+      gb.save();
+      gb.translate(px, py);
+      gb.rotate(ang);
+      gb.strokeStyle = light ? gray(172) : gray(95);
+      gb.lineWidth = 2.2;
+      gb.beginPath();
+      gb.ellipse(0, 0, rx * 0.8, ry * 0.7, 0, 0, Math.PI * 2);
+      gb.stroke();
+      gb.restore();
+    });
+  }
+
+  const m = new THREE.MeshPhysicalMaterial({
+    map: toTexture(map, { srgb: true, repeat: true }),
+    bumpMap: toTexture(bump, { repeat: true }),
+    bumpScale: 0.65,
+    roughness: 0.14,
+    metalness: 0.1,
+    clearcoat: 0.9,
+    clearcoatRoughness: 0.1,
+  });
+  m.map.repeat.set(repeat, repeat);
+  m.bumpMap.repeat.set(repeat, repeat);
+  waterCache.set(repeat, m);
+  return m;
+}
+
+// --------------------------------------------------------------- đồng xu vàng hoa sen
+let lotusCoinMats = null;
+export function lotusCoinMaterials() {
+  if (lotusCoinMats) return lotusCoinMats;
+  const S = 256;
+  const map = canvas(S);
+  const bump = canvas(S);
+  const g = map.getContext('2d');
+  const gb = bump.getContext('2d');
+  const cx = S / 2;
+  const cy = S / 2;
+
+  const rad = g.createRadialGradient(cx * 0.75, cy * 0.7, 10, cx, cy, S * 0.5);
+  rad.addColorStop(0, '#FFF3A8');
+  rad.addColorStop(0.55, '#FFD042');
+  rad.addColorStop(1, '#D9930D');
+  g.fillStyle = rad;
+  g.fillRect(0, 0, S, S);
+  gb.fillStyle = gray(120);
+  gb.fillRect(0, 0, S, S);
+
+  // Vành xu nổi
+  g.strokeStyle = '#FFE885';
+  g.lineWidth = 14;
+  g.beginPath();
+  g.arc(cx, cy, S * 0.43, 0, Math.PI * 2);
+  g.stroke();
+  gb.strokeStyle = gray(225);
+  gb.lineWidth = 14;
+  gb.beginPath();
+  gb.arc(cx, cy, S * 0.43, 0, Math.PI * 2);
+  gb.stroke();
+
+  // Hoa sen dập nổi ở tâm đồng xu
+  const drawLotus = (ctx, fill, stroke) => {
+    ctx.save();
+    ctx.translate(cx, cy + 16);
+    const petals = [
+      [-0.75, 0.78], [0.75, 0.78], [-0.4, 0.92], [0.4, 0.92], [0, 1.0],
+    ];
+    for (const [rot, sc] of petals) {
+      ctx.save();
+      ctx.rotate(rot);
+      ctx.scale(sc, sc);
+      ctx.fillStyle = fill;
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(-28, -26, 0, -68);
+      ctx.quadraticCurveTo(28, -26, 0, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+    ctx.restore();
+  };
+  drawLotus(g, '#FFF099', '#B87300');
+  drawLotus(gb, gray(235), gray(170));
+
+  const face = new THREE.MeshStandardMaterial({
+    map: toTexture(map, { srgb: true }),
+    bumpMap: toTexture(bump),
+    bumpScale: 1.8,
+    roughness: 0.22,
+    metalness: 0.82,
+    emissive: '#6e4700',
+    emissiveIntensity: 0.18,
+  });
+  const rim = new THREE.MeshStandardMaterial({
+    color: '#FFC83B',
+    roughness: 0.26,
+    metalness: 0.85,
+    emissive: '#6e4700',
+    emissiveIntensity: 0.18,
+  });
+  lotusCoinMats = [rim, face, face];
+  return lotusCoinMats;
+}
+

@@ -114,6 +114,39 @@ export function buildTree(scale = 1, foliageColor = '#3DBE5C') {
   return g;
 }
 
+// Cây dừa nhiệt đới uốn cong đặc trưng bên bờ biển / kênh đào
+export function buildPalmTree(scale = 1) {
+  const g = new THREE.Group();
+  const k = scale;
+  const bark = woodMaterial('#8A5A36');
+  const frondMat = mat('#2EAD4B', { roughness: 0.45 });
+  const coconutMat = mat('#6E4720', { roughness: 0.5 });
+  // Thân cây dừa hơi nghiêng có đốt
+  const segs = 5;
+  for (let i = 0; i < segs; i++) {
+    const t = i / segs;
+    const r = (0.048 - t * 0.016) * k;
+    const x = Math.sin(t * 0.6) * 0.07 * k;
+    const y = (0.06 + i * 0.11) * k;
+    g.add(part(GEO.cyl(10), bark, [x, y, 0], [r, 0.125 * k, r], [0, 0, -0.1 * t]));
+  }
+  const topX = Math.sin(0.6) * 0.07 * k;
+  const topY = 0.62 * k;
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2;
+    g.add(part(GEO.sphere(), coconutMat, [topX + Math.cos(a) * 0.032 * k, topY - 0.02 * k, Math.sin(a) * 0.032 * k], [0.024 * k, 0.024 * k, 0.024 * k]));
+  }
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const frond = new THREE.Group();
+    frond.position.set(topX, topY, 0);
+    frond.rotation.y = a;
+    frond.add(part(GEO.sphere(), frondMat, [0.16 * k, 0.02 * k, 0], [0.18 * k, 0.028 * k, 0.065 * k], [0, 0, -0.32]));
+    g.add(frond);
+  }
+  return g;
+}
+
 const carBodyGeo = cached('carBody', () => {
   const sh = new THREE.Shape();
   sh.moveTo(-0.36, 0.06);
@@ -189,20 +222,20 @@ export function buildCar(color = '#E53935', { police = false } = {}) {
 
 export function buildTrain(color = '#E53935') {
   const g = new THREE.Group();
-  const body = mat(color, { roughness: 0.35, metalness: 0.15 });
-  const dark = mat('#2b2b2b', { roughness: 0.6 });
+  const body = mat(color, { roughness: 0.32, metalness: 0.18 });
+  const dark = mat('#2b2b2b', { roughness: 0.55 });
   g.add(part(GEO.cyl(18), body, [0.1, 0.24, 0], [0.15, 0.5, 0.15], [0, 0, Math.PI / 2]));
   g.add(part(GEO.rbox(), body, [-0.24, 0.3, 0], [0.26, 0.34, 0.3]));
-  g.add(part(GEO.rbox(), dark, [-0.24, 0.49, 0], [0.32, 0.05, 0.36]));
+  g.add(part(GEO.rbox(), gold(), [-0.24, 0.49, 0], [0.32, 0.05, 0.36]));
   g.add(part(GEO.box(), glass('#9fe0ff'), [-0.24, 0.36, 0], [0.27, 0.1, 0.31]));
   g.add(part(GEO.cyl(12), dark, [0.24, 0.47, 0], [0.045, 0.16, 0.045]));
-  g.add(part(GEO.cone(12), dark, [0.24, 0.57, 0], [0.07, 0.06, 0.07], [Math.PI, 0, 0]));
+  g.add(part(GEO.cone(12), gold(), [0.24, 0.57, 0], [0.07, 0.06, 0.07], [Math.PI, 0, 0]));
   g.add(part(GEO.rbox(), dark, [0, 0.07, 0], [0.7, 0.06, 0.26]));
-  const wheel = mat('#ffcc33', { metalness: 0.5, roughness: 0.35 });
+  const wheel = gold();
   for (const x of [0.22, 0.02, -0.2]) {
     for (const z of [0.14, -0.14]) g.add(part(GEO.cyl(14), wheel, [x, 0.08, z], [0.075, 0.04, 0.075], [Math.PI / 2, 0, 0]));
   }
-  g.add(part(GEO.cone(4), mat('#9e9e9e', { metalness: 0.4 }), [0.38, 0.1, 0], [0.12, 0.1, 0.16], [0, 0, -Math.PI / 2]));
+  g.add(part(GEO.cone(4), gold(), [0.38, 0.1, 0], [0.12, 0.1, 0.16], [0, 0, -Math.PI / 2]));
   return g;
 }
 
@@ -210,60 +243,65 @@ export function buildTrain(color = '#E53935') {
 // Mọi landmark nằm trong vùng ~1.5 x 1.0, mặt tiền hướng -z (về phía đường đi).
 const LANDMARK_BUILDERS = {
   brown(g, color, v) {
-    const wall = v ? '#FFCB8A' : '#F5B97A';
+    const wall = v ? '#FFE6BD' : '#FAD6A5';
     block(g, facade(wall, { cols: 2, rows: 1, window: '#9ad8ff', brick: true }), 0, 0, 0, 0.9, 0.5, 0.7);
-    roofPyramid(g, 0, 0.5, 0, 1.05, 0.85, 0.42, color);
+    roofPyramid(g, 0, 0.5, 0, 1.05, 0.85, 0.42, '#D84A2B');
     door(g, v ? 0.2 : -0.2, -0.36);
-    block(g, mat('#B5651D'), 0.28, 0.6, 0.12, 0.12, 0.28, 0.12);
-    g.add(buildTree(0.8).translateX(-0.62).translateZ(0.2));
+    block(g, mat(color), 0.28, 0.6, 0.12, 0.12, 0.28, 0.12);
+    g.add(buildPalmTree(0.75).translateX(-0.62).translateZ(0.2));
   },
   lightblue(g, color, v) {
-    block(g, facade('#A9E4FF', { cols: 3, rows: 2, window: '#5ab8ff' }), 0, 0, 0.05, 1.15, 0.62, 0.68);
+    block(g, facade('#CFF2FF', { cols: 3, rows: 2, window: '#2A9DF4' }), 0, 0, 0.05, 1.15, 0.62, 0.68);
     block(g, mat(color), 0, 0.62, 0.05, 1.2, 0.07, 0.72);
-    g.add(part(GEO.box(), mat(color, { roughness: 0.6 }), [0, 0.46, -0.42], [1.16, 0.04, 0.32], [-0.35, 0, 0]));
+    g.add(part(GEO.box(), mat(color, { roughness: 0.45 }), [0, 0.46, -0.42], [1.16, 0.04, 0.32], [-0.35, 0, 0]));
     g.add(part(GEO.box(), mat('#ffffff'), [0, 0.465, -0.42], [1.16, 0.041, 0.1], [-0.35, 0, 0]));
     block(g, mat(color), 0, 0.69, 0.05, 0.62, 0.2, 0.06);
-    door(g, v ? -0.3 : 0.3, -0.29, 0.3, '#2E5E8C');
+    door(g, v ? -0.3 : 0.3, -0.29, 0.3, '#1B6CA8');
   },
   pink(g, color, v) {
-    block(g, facade('#FFB3D4', { cols: 3, rows: 1, window: '#fff0f8' }), 0, 0, 0, 1.1, 0.48, 0.74);
-    block(g, facade('#FFB3D4', { cols: 2, rows: 1, window: '#fff0f8' }), v ? 0.15 : -0.15, 0.48, 0.05, 0.72, 0.42, 0.6);
+    block(g, facade('#FFD6E8', { cols: 3, rows: 1, window: '#fff0f8' }), 0, 0, 0, 1.1, 0.48, 0.74);
+    block(g, facade('#FFD6E8', { cols: 2, rows: 1, window: '#fff0f8' }), v ? 0.15 : -0.15, 0.48, 0.05, 0.72, 0.42, 0.6);
     roofPyramid(g, v ? 0.15 : -0.15, 0.9, 0.05, 0.86, 0.72, 0.36, color);
     block(g, mat('#ffffff'), v ? 0.15 : -0.15, 0.46, -0.32, 0.74, 0.05, 0.16);
     door(g, v ? -0.3 : 0.3, -0.38, 0.26, '#B0306F');
-    g.add(buildTree(0.6, '#F48FB1').translateX(v ? -0.6 : 0.6).translateZ(0.3));
+    g.add(buildTree(0.6, '#FF80AB').translateX(v ? -0.6 : 0.6).translateZ(0.3));
   },
   orange(g, color, v) {
-    block(g, facade('#FFB45E', { cols: 3, rows: 4, window: '#ffe7b8' }), 0, 0, 0.05, 1.0, 1.05, 0.72);
-    block(g, mat(color), 0, 1.05, 0.05, 1.08, 0.08, 0.8);
-    g.add(part(GEO.cyl(14), mat('#7FB3D5'), [v ? 0.25 : -0.25, 1.25, 0.15], [0.12, 0.2, 0.12]));
+    block(g, facade('#FFE0B2', { cols: 3, rows: 3, window: '#7ec8ff' }), 0, 0, 0.05, 1.0, 0.96, 0.72);
+    roofPyramid(g, 0, 0.96, 0.05, 1.12, 0.84, 0.32, '#D84315');
     door(g, 0, -0.32, 0.26, '#8a4b1d');
-    block(g, mat(color, { roughness: 0.6 }), 0, 0.3, -0.36, 0.46, 0.04, 0.14);
+    block(g, mat(color, { roughness: 0.45 }), 0, 0.3, -0.36, 0.46, 0.04, 0.14);
+    // Đèn lồng đỏ Hội An treo trước hiên
+    for (const sx of [-0.32, 0.32]) {
+      g.add(part(GEO.sphere(), mat('#FF3D00', { emissive: '#FF6D00', emissiveIntensity: 0.7 }), [sx, 0.28, -0.38], [0.045, 0.055, 0.045]));
+    }
+    if (v) g.add(buildPalmTree(0.7).translateX(0.62).translateZ(0.2));
   },
   red(g, color, v) {
-    block(g, facade('#FF8F84', { cols: 3, rows: 5, window: '#c3e6ff' }), 0, 0, 0.05, 0.92, 1.35, 0.72);
+    block(g, facade('#FFCCBC', { cols: 3, rows: 5, window: '#c3e6ff' }), 0, 0, 0.05, 0.92, 1.35, 0.72);
     block(g, mat(color), 0, 1.35, 0.05, 0.98, 0.1, 0.78);
+    block(g, gold(), 0, 1.45, 0.05, 0.86, 0.04, 0.68);
     block(g, mat(color), 0, 0, -0.33, 0.98, 0.16, 0.08);
-    g.add(part(GEO.cyl(8), mat('#cccccc', { metalness: 0.6 }), [v ? 0.25 : -0.25, 1.65, 0.1], [0.02, 0.45, 0.02]));
+    g.add(part(GEO.cyl(8), gold(), [v ? 0.25 : -0.25, 1.65, 0.1], [0.02, 0.45, 0.02]));
     g.add(part(GEO.sphere(), mat('#ff4444', { emissive: '#ff0000', emissiveIntensity: 0.8 }), [v ? 0.25 : -0.25, 1.88, 0.1], [0.04, 0.04, 0.04]));
   },
   yellow(g, color, v) {
-    g.add(part(GEO.cyl(24), facade('#FFE066', { cols: 8, rows: 6, window: '#9fd8ff' }), [0, 0.8, 0.05], [0.42, 1.6, 0.42]));
-    g.add(part(GEO.cyl(24), mat(color, { metalness: 0.4, roughness: 0.3 }), [0, 1.64, 0.05], [0.46, 0.08, 0.46]));
+    g.add(part(GEO.cyl(24), facade('#FFF0A8', { cols: 8, rows: 6, window: '#58b4f5' }), [0, 0.8, 0.05], [0.42, 1.6, 0.42]));
+    g.add(part(GEO.cyl(24), gold(), [0, 1.64, 0.05], [0.46, 0.08, 0.46]));
     g.add(part(GEO.hemi(), glass('#FFE58A'), [0, 1.68, 0.05], [0.32, 0.28, 0.32]));
     block(g, mat(color), 0, 0, -0.32, 0.6, 0.22, 0.2);
-    if (v) g.add(buildTree(0.7).translateX(0.6).translateZ(0.25));
+    if (v) g.add(buildPalmTree(0.75).translateX(0.6).translateZ(0.25));
   },
   green(g, color, v) {
-    const glassMat = facade('#9FE3B6', { cols: 3, rows: 7, window: '#2fb36a', frame: '#e8fff0', glassy: true });
+    const glassMat = facade('#8CE8D8', { cols: 3, rows: 7, window: '#0D9488', frame: '#e8fffb', glassy: true });
     block(g, glassMat, -0.3, 0, 0.05, 0.48, v ? 1.75 : 1.55, 0.6, false);
     block(g, glassMat, 0.32, 0, 0.05, 0.48, v ? 1.45 : 1.8, 0.6, false);
-    block(g, mat(color), 0.01, 1.0, 0.05, 0.2, 0.1, 0.3);
+    block(g, gold(), 0.01, 1.0, 0.05, 0.2, 0.1, 0.3);
     block(g, mat(color), -0.3, v ? 1.75 : 1.55, 0.05, 0.5, 0.06, 0.62);
     block(g, mat(color), 0.32, v ? 1.45 : 1.8, 0.05, 0.5, 0.06, 0.62);
   },
   darkblue(g, color, v) {
-    const glassMat = facade('#8FB0FF', { cols: 3, rows: 6, window: '#2f62ff', frame: '#eef4ff', glassy: true });
+    const glassMat = facade('#7CB8FF', { cols: 3, rows: 6, window: '#1D4ED8', frame: '#eef4ff', glassy: true });
     const tiers = v ? [[0.86, 0.75], [0.66, 0.65], [0.46, 0.5]] : [[0.8, 0.9], [0.6, 0.7], [0.4, 0.55]];
     let y = 0;
     for (const [w, h] of tiers) {
@@ -273,7 +311,7 @@ const LANDMARK_BUILDERS = {
       y += 0.04;
     }
     g.add(part(GEO.cone(12), gold(), [0, y + 0.35, 0.05], [0.07, 0.7, 0.07]));
-    if (v) g.add(part(GEO.cyl(24), mat('#ffffff'), [0, y - 0.25, -0.18], [0.22, 0.03, 0.22]));
+    if (v) g.add(part(GEO.cyl(24), gold(), [0, y - 0.25, -0.18], [0.22, 0.03, 0.22]));
   },
 };
 
@@ -291,8 +329,9 @@ export function buildStation() {
   train.position.set(0.25, 0.06, 0.35);
   train.scale.setScalar(0.85);
   g.add(train);
-  block(g, facade('#D9A27A', { cols: 3, rows: 1, window: '#ffe2a8', brick: true }), 0, 0, -0.18, 1.3, 0.48, 0.5);
-  g.add(part(GEO.halfCyl(), mat('#C0392B', { roughness: 0.5 }), [0, 0.48, -0.18], [1.36, 0.28, 0.3]));
+  block(g, facade('#FFE5B4', { cols: 3, rows: 1, window: '#9ad8ff', brick: true }), 0, 0, -0.18, 1.3, 0.48, 0.5);
+  g.add(part(GEO.halfCyl(), roofMaterial('#D63A24'), [0, 0.48, -0.18], [1.36, 0.28, 0.3]));
+  g.add(part(GEO.cyl(24), gold(), [0, 0.62, -0.44], [0.13, 0.03, 0.13], [Math.PI / 2, 0, 0]));
   g.add(part(GEO.cyl(24), mat('#ffffff'), [0, 0.62, -0.45], [0.11, 0.03, 0.11], [Math.PI / 2, 0, 0]));
   g.add(part(GEO.box(), mat('#333333'), [0.025, 0.63, -0.47], [0.05, 0.012, 0.01]));
   g.add(part(GEO.box(), mat('#333333'), [0, 0.65, -0.47], [0.012, 0.07, 0.01]));
@@ -307,12 +346,12 @@ export function buildUtility(kind) {
     for (const [x, z] of [[-0.25, -0.2], [0.25, -0.2], [-0.25, 0.25], [0.25, 0.25]]) {
       g.add(part(GEO.cyl(8), leg, [x, 0.4, z], [0.035, 0.8, 0.035]));
     }
-    g.add(part(GEO.cyl(24), mat('#4FC3F7', { roughness: 0.3, metalness: 0.2 }), [0, 1.0, 0.02], [0.42, 0.45, 0.42]));
-    g.add(part(GEO.cone(24), mat('#0277BD'), [0, 1.36, 0.02], [0.46, 0.28, 0.46]));
-    g.add(part(GEO.sphere(), mat('#E1F5FE', { roughness: 0.1 }), [0, 1.02, -0.4], [0.12, 0.12, 0.04]));
-    g.add(part(GEO.cyl(10), mat('#90A4AE', { metalness: 0.6 }), [0.48, 0.45, 0.02], [0.05, 0.9, 0.05]));
+    g.add(part(GEO.cyl(24), mat('#18C9D4', { roughness: 0.22, metalness: 0.2 }), [0, 1.0, 0.02], [0.42, 0.45, 0.42]));
+    g.add(part(GEO.cone(24), mat('#0284C7'), [0, 1.36, 0.02], [0.46, 0.28, 0.46]));
+    g.add(part(GEO.sphere(), mat('#E0F7FA', { roughness: 0.1 }), [0, 1.02, -0.4], [0.12, 0.12, 0.04]));
+    g.add(part(GEO.cyl(10), gold(), [0.48, 0.45, 0.02], [0.05, 0.9, 0.05]));
   } else {
-    block(g, facade('#ECEFF1', { cols: 3, rows: 2, window: '#fff59d' }), -0.15, 0, 0.05, 0.9, 0.5, 0.6);
+    block(g, facade('#FFF8E7', { cols: 3, rows: 2, window: '#64b5f6' }), -0.15, 0, 0.05, 0.9, 0.5, 0.6);
     const lathe = cached('cooling', () => {
       const pts = [];
       for (let i = 0; i <= 10; i++) {
@@ -321,74 +360,75 @@ export function buildUtility(kind) {
       }
       return new THREE.LatheGeometry(pts, 20);
     });
-    g.add(part(lathe, mat('#CFD8DC', { side: THREE.DoubleSide }), [0.45, 0, 0.2], [1, 1, 1]));
+    g.add(part(lathe, mat('#E2E8F0', { side: THREE.DoubleSide }), [0.45, 0, 0.2], [1, 1, 1]));
     const bolt = cached('bolt', () => {
       const s = new THREE.Shape();
       s.moveTo(0.05, 0.3); s.lineTo(-0.1, 0); s.lineTo(0.01, 0); s.lineTo(-0.06, -0.3); s.lineTo(0.12, 0.06); s.lineTo(0.01, 0.06); s.lineTo(0.1, 0.3);
       s.lineTo(0.05, 0.3);
       return new THREE.ExtrudeGeometry(s, { depth: 0.05, bevelEnabled: false });
     });
-    g.add(part(bolt, mat('#FFD600', { emissive: '#FFB300', emissiveIntensity: 0.5 }), [-0.15, 0.85, -0.05], [1.3, 1.3, 1.3]));
+    g.add(part(bolt, mat('#FFD600', { emissive: '#FFB300', emissiveIntensity: 0.65 }), [-0.15, 0.85, -0.05], [1.3, 1.3, 1.3]));
   }
   return g;
 }
 
 export function buildBank(scale = 1) {
   const g = new THREE.Group();
-  const stone = stoneMaterial('#F5F0E6', { repeat: 2, roughness: 0.55, veins: true });
-  block(g, mat('#D7CCC8'), 0, 0, 0, 1.4, 0.06, 1.0, false);
-  block(g, mat('#E0D7CF'), 0, 0.06, 0.05, 1.3, 0.06, 0.9, false);
-  block(g, facade('#F5F0E6', { cols: 3, rows: 1, window: '#ffe9a8' }), 0, 0.12, 0.2, 1.1, 0.58, 0.5, false);
+  const stone = stoneMaterial('#FAF3E6', { repeat: 2, roughness: 0.5, veins: true });
+  block(g, mat('#E5D9C5'), 0, 0, 0, 1.4, 0.06, 1.0, false);
+  block(g, gold(), 0, 0.06, 0.05, 1.32, 0.05, 0.92, false);
+  block(g, facade('#FFF8EB', { cols: 3, rows: 1, window: '#7ec8ff' }), 0, 0.11, 0.2, 1.1, 0.58, 0.5, false);
   for (let i = 0; i < 5; i++) {
-    g.add(part(GEO.cyl(14), stone, [-0.48 + i * 0.24, 0.41, -0.18], [0.05, 0.58, 0.05]));
+    g.add(part(GEO.cyl(14), stone, [-0.48 + i * 0.24, 0.4, -0.18], [0.05, 0.58, 0.05]));
+    g.add(part(GEO.cyl(14), gold(), [-0.48 + i * 0.24, 0.13, -0.18], [0.062, 0.04, 0.062]));
   }
-  block(g, stone, 0, 0.7, 0.05, 1.24, 0.08, 0.82, false);
-  g.add(part(GEO.prism(), stone, [0, 0.87, 0.05], [0.72, 0.18, 0.82]));
-  g.add(part(GEO.cyl(24), gold(), [0, 0.86, -0.36], [0.11, 0.03, 0.11], [Math.PI / 2, 0, 0]));
+  block(g, stone, 0, 0.69, 0.05, 1.24, 0.08, 0.82, false);
+  g.add(part(GEO.prism(), roofMaterial('#D84315'), [0, 0.87, 0.05], [0.72, 0.19, 0.84]));
+  g.add(part(GEO.cyl(24), gold(), [0, 0.86, -0.37], [0.13, 0.035, 0.13], [Math.PI / 2, 0, 0]));
   g.scale.setScalar(scale);
   return g;
 }
 
-export function buildQuestionMark(color = '#FF8A00') {
+export function buildQuestionMark(color = '#FF7A1A') {
   const g = new THREE.Group();
-  const m = mat(color, { roughness: 0.25, metalness: 0.1, emissive: color, emissiveIntensity: 0.15 });
-  const arc = cached('qarc', () => new THREE.TorusGeometry(0.2, 0.07, 12, 24, Math.PI * 1.5));
+  const m = mat(color, { roughness: 0.22, metalness: 0.15, emissive: color, emissiveIntensity: 0.22 });
+  const arc = cached('qarc', () => new THREE.TorusGeometry(0.2, 0.075, 14, 28, Math.PI * 1.5));
   g.add(part(arc, m, [0, 0.38, 0], [1, 1, 1], [0, 0, -Math.PI / 2]));
-  g.add(part(GEO.cyl(12), m, [0, 0.1, 0], [0.07, 0.18, 0.07]));
-  g.add(part(GEO.sphere(), m, [0, -0.12, 0], [0.08, 0.08, 0.08]));
+  g.add(part(GEO.cyl(14), m, [0, 0.1, 0], [0.072, 0.18, 0.072]));
+  g.add(part(GEO.sphere(), gold(), [0, -0.12, 0], [0.088, 0.088, 0.088]));
   return g;
 }
 
 export function buildChest() {
   const g = new THREE.Group();
-  const wood = mat('#A0522D', { roughness: 0.6 });
-  block(g, wood, 0, 0, 0, 0.7, 0.36, 0.46);
-  g.add(part(GEO.halfCyl(), wood, [0, 0.36, 0], [0.72, 0.2, 0.23]));
-  for (const x of [-0.25, 0.25]) g.add(part(GEO.box(), gold(), [x, 0.3, 0], [0.06, 0.62, 0.48]));
-  g.add(part(GEO.rbox(), gold(), [0, 0.36, -0.24], [0.12, 0.12, 0.04]));
-  const coin = mat('#FFD54F', { metalness: 0.7, roughness: 0.25 });
-  for (let i = 0; i < 4; i++) g.add(part(GEO.cyl(16), coin, [0.38 + (i % 2) * 0.08, 0.02 + i * 0.035, -0.2], [0.08, 0.03, 0.08]));
-  g.add(part(GEO.octa(), mat('#E040FB', { roughness: 0.1, metalness: 0.3 }), [0, 0.52, 0], [0.08, 0.1, 0.08]));
+  const wood = mat('#149690', { roughness: 0.38, metalness: 0.1 });
+  block(g, wood, 0, 0, 0, 0.72, 0.36, 0.48);
+  g.add(part(GEO.halfCyl(), wood, [0, 0.36, 0], [0.74, 0.22, 0.24]));
+  for (const x of [-0.25, 0.25]) g.add(part(GEO.box(), gold(), [x, 0.3, 0], [0.065, 0.63, 0.5]));
+  g.add(part(GEO.rbox(), gold(), [0, 0.36, -0.25], [0.13, 0.13, 0.045]));
+  const coin = gold();
+  for (let i = 0; i < 5; i++) g.add(part(GEO.cyl(16), coin, [0.4 + (i % 2) * 0.08, 0.02 + i * 0.036, -0.18], [0.085, 0.032, 0.085]));
+  g.add(part(GEO.octa(), mat('#FF5252', { roughness: 0.1, metalness: 0.3, emissive: '#FF1744', emissiveIntensity: 0.25 }), [0, 0.54, 0], [0.085, 0.11, 0.085]));
   return g;
 }
 
 export function buildMoneyBag() {
   const g = new THREE.Group();
-  const cloth = mat('#7CB342', { roughness: 0.75 });
+  const cloth = mat('#16A34A', { roughness: 0.55 });
   g.add(part(GEO.sphere(), cloth, [0, 0.3, 0], [0.32, 0.3, 0.3]));
   g.add(part(GEO.cone(16), cloth, [0, 0.66, 0], [0.12, 0.16, 0.12], [Math.PI, 0, 0]));
   g.add(part(GEO.cyl(16), cloth, [0, 0.74, 0], [0.16, 0.05, 0.16]));
   g.add(part(GEO.torus(), gold(), [0, 0.6, 0], [0.11, 0.11, 0.11], [Math.PI / 2, 0, 0]));
   g.add(part(GEO.cyl(24), gold(), [0, 0.32, -0.3], [0.12, 0.02, 0.12], [Math.PI / 2, 0, 0]));
-  const coin = mat('#FFD54F', { metalness: 0.7, roughness: 0.25 });
-  for (let i = 0; i < 5; i++) g.add(part(GEO.cyl(16), coin, [0.45, 0.02 + i * 0.035, 0.1], [0.09, 0.03, 0.09]));
+  const coin = gold();
+  for (let i = 0; i < 6; i++) g.add(part(GEO.cyl(16), coin, [0.45, 0.02 + i * 0.036, 0.1], [0.095, 0.032, 0.095]));
   return g;
 }
 
 export function buildDiamondRing() {
   const g = new THREE.Group();
   g.add(part(GEO.torus(), gold(), [0, 0.32, 0], [0.24, 0.24, 0.5]));
-  g.add(part(GEO.octa(), mat('#80DEEA', { roughness: 0.05, metalness: 0.4, emissive: '#26C6DA', emissiveIntensity: 0.25 }), [0, 0.68, 0], [0.16, 0.2, 0.16]));
+  g.add(part(GEO.octa(), mat('#38BDF8', { roughness: 0.05, metalness: 0.4, emissive: '#0284C7', emissiveIntensity: 0.35 }), [0, 0.68, 0], [0.17, 0.22, 0.17]));
   return g;
 }
 
@@ -400,14 +440,25 @@ export function buildStartGate() {
     s.lineTo(-0.6, 0.18);
     return new THREE.ExtrudeGeometry(s, { depth: 0.08, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.03, bevelSegments: 2 });
   });
-  // Mũi tên chỉ về ô số 1 (hướng -x cục bộ của góc Bắt đầu).
-  g.add(part(arrow, mat('#2ECC71', { roughness: 0.35 }), [-0.15, 0.06, -0.55], [1.6, 1.6, 1], [-Math.PI / 2, 0, Math.PI]));
-  // Cổng đặt sát mép ngoài để không chạm vào nhân vật đứng trên ô.
-  const pillar = mat('#FF7043', { roughness: 0.4 });
-  for (const x of [-1.2, 1.2]) g.add(part(GEO.cyl(16), pillar, [x, 0.6, 1.3], [0.09, 1.2, 0.09]));
-  g.add(part(GEO.rbox(), mat('#FFCA28', { roughness: 0.35 }), [0, 1.25, 1.3], [2.65, 0.22, 0.14]));
-  const coin = mat('#FFD54F', { metalness: 0.7, roughness: 0.25 });
-  for (let i = 0; i < 6; i++) g.add(part(GEO.cyl(16), coin, [0.9, 0.02 + i * 0.04, -1.0], [0.13, 0.035, 0.13]));
+  // Mũi tên xanh ngọc chỉ về ô số 1 (hướng -x cục bộ của góc Bắt đầu).
+  g.add(part(arrow, mat('#10B981', { roughness: 0.3 }), [-0.15, 0.06, -0.55], [1.6, 1.6, 1], [-Math.PI / 2, 0, Math.PI]));
+  // Cổng chào sơn son thếp vàng đặt sát mép ngoài để không chạm vào nhân vật đứng trên ô.
+  const pillar = mat('#D63A24', { roughness: 0.35 });
+  const goldMat = gold();
+  for (const x of [-1.2, 1.2]) {
+    g.add(part(GEO.cyl(16), pillar, [x, 0.62, 1.3], [0.095, 1.24, 0.095]));
+    g.add(part(GEO.cyl(16), goldMat, [x, 0.06, 1.3], [0.13, 0.12, 0.13]));
+    g.add(part(GEO.cyl(16), goldMat, [x, 1.18, 1.3], [0.12, 0.08, 0.12]));
+  }
+  g.add(part(GEO.rbox(), goldMat, [0, 1.28, 1.3], [2.72, 0.22, 0.18]));
+  g.add(part(GEO.prism(), roofMaterial('#D63A24'), [0, 1.48, 1.3], [0.22, 0.22, 2.86], [0, Math.PI / 2, 0]));
+  // Hoa sen vàng trên đỉnh cổng chào + chồng xu vàng lớn
+  g.add(part(GEO.sphere(), goldMat, [0, 1.68, 1.3], [0.16, 0.18, 0.12]));
+  for (const a of [-0.5, 0.5]) {
+    g.add(part(GEO.sphere(), goldMat, [Math.sin(a) * 0.18, 1.64, 1.3], [0.1, 0.16, 0.08], [0, 0, -a]));
+  }
+  for (let i = 0; i < 7; i++) g.add(part(GEO.cyl(18), goldMat, [0.92, 0.02 + i * 0.042, -1.0], [0.145, 0.036, 0.145]));
+  for (let i = 0; i < 4; i++) g.add(part(GEO.cyl(18), goldMat, [0.64, 0.02 + i * 0.042, -1.08], [0.13, 0.036, 0.13]));
   return g;
 }
 
@@ -435,18 +486,22 @@ export function buildJail() {
 
 export function buildPark() {
   const g = new THREE.Group();
-  g.add(part(GEO.cyl(28), mat('#B0BEC5'), [0, 0.06, 0.35], [0.36, 0.12, 0.36]));
-  g.add(part(GEO.cyl(28), mat('#4FC3F7', { roughness: 0.1, metalness: 0.2 }), [0, 0.125, 0.35], [0.31, 0.02, 0.31]));
-  g.add(part(GEO.cyl(12), mat('#CFD8DC'), [0, 0.25, 0.35], [0.05, 0.3, 0.05]));
-  g.add(part(GEO.sphere(), mat('#81D4FA', { roughness: 0.1 }), [0, 0.42, 0.35], [0.08, 0.08, 0.08]));
-  for (const [x, z] of [[-1.15, -1.15], [1.15, -1.15], [-1.2, 1.2], [1.2, 1.2]]) g.add(buildTree(1).translateX(x).translateZ(z));
+  // Hồ sen xanh ngọc ở góc nghỉ dưỡng
+  g.add(part(GEO.cyl(28), stoneMaterial('#EFE3C8', { repeat: 1 }), [0, 0.06, 0.35], [0.46, 0.12, 0.46]));
+  g.add(part(GEO.cyl(28), mat('#18C9D4', { roughness: 0.1, metalness: 0.2 }), [0, 0.125, 0.35], [0.4, 0.02, 0.4]));
+  g.add(part(GEO.cyl(12), gold(), [0, 0.22, 0.35], [0.06, 0.22, 0.06]));
+  g.add(part(GEO.sphere(), gold(), [0, 0.36, 0.35], [0.1, 0.12, 0.1]));
+  // Cây dừa nhiệt đới và cây xanh ở 4 góc công viên
+  g.add(buildPalmTree(1.15).translateX(-1.12).translateZ(-1.12));
+  g.add(buildPalmTree(1.05).translateX(1.12).translateZ(1.12));
+  g.add(buildTree(0.95).translateX(1.12).translateZ(-1.12));
+  g.add(buildTree(0.9, '#FF80AB').translateX(-1.15).translateZ(1.15));
+  // Ghế nghỉ + dù biển màu san hô
   const bench = woodMaterial('#9A6B45');
-  g.add(part(GEO.rbox(), bench, [-0.3, 0.14, -1.1], [0.55, 0.04, 0.16]));
-  g.add(part(GEO.rbox(), bench, [-0.3, 0.24, -1.17], [0.55, 0.14, 0.03]));
-  const car = buildCar('#29B6F6');
-  car.position.set(0.55, 0, -0.95);
-  car.rotation.y = 0.3;
-  g.add(car);
+  g.add(part(GEO.rbox(), bench, [-0.35, 0.14, -1.08], [0.55, 0.04, 0.16]));
+  g.add(part(GEO.rbox(), bench, [-0.35, 0.24, -1.15], [0.55, 0.14, 0.03]));
+  g.add(part(GEO.cyl(10), mat('#F5F5F5'), [0.55, 0.32, -0.95], [0.02, 0.64, 0.02]));
+  g.add(part(GEO.cone(16), mat('#FF5E57', { roughness: 0.4 }), [0.55, 0.64, -0.95], [0.34, 0.18, 0.34]));
   return g;
 }
 
@@ -465,10 +520,12 @@ export function buildGoToJail() {
 
 export function buildHotel() {
   const g = new THREE.Group();
-  block(g, facade('#FF5A5A', { cols: 4, rows: 2, window: '#ffe0e0', frame: '#ffdede' }), 0, 0, 0, 1.05, 0.5, 0.42);
-  block(g, mat('#B71C1C'), 0, 0.5, 0, 1.12, 0.07, 0.48);
-  block(g, mat('#ffffff'), 0, 0.57, 0, 0.36, 0.16, 0.06);
-  g.add(part(GEO.box(), mat('#C62828'), [0, 0.65, -0.035], [0.06, 0.1, 0.01]));
+  // Khách sạn cao cấp phong cách đồ chơi sơn bóng: thân kem/đỏ san hô, mái ngói đỏ đô, viền và vương miện vàng kim
+  block(g, facade('#FFF6E5', { cols: 4, rows: 2, window: '#7ec8ff', frame: '#ffffff' }), 0, 0, 0, 1.04, 0.48, 0.42);
+  block(g, mat('#E53935', { roughness: 0.32 }), 0, 0.48, 0, 1.12, 0.07, 0.48);
+  g.add(part(GEO.prism(), roofMaterial('#C62828'), [0, 0.64, 0], [0.26, 0.18, 1.14], [0, Math.PI / 2, 0]));
+  block(g, gold(), 0, 0.55, -0.22, 0.42, 0.16, 0.06);
+  g.add(part(GEO.sphere(), gold(), [0, 0.77, 0], [0.065, 0.065, 0.065]));
   return g;
 }
 

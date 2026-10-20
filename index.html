@@ -8,7 +8,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='6' width='52' height='52' rx='12' fill='%23fff' stroke='%237a5cff' stroke-width='5'/%3E%3Ccircle cx='22' cy='22' r='5' fill='%232b2340'/%3E%3Ccircle cx='42' cy='42' r='5' fill='%232b2340'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%23e53935'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script type="importmap">
     {
@@ -26,6 +26,7 @@
   <div id="loading-screen" class="screen">
     <div class="loading-card">
       <div class="logo">CỜ TỶ PHÚ <span>3D</span></div>
+      <p class="loading-sub">Đảo Tỷ Phú Rực Rỡ · Thành Phố Việt Nam Thu Nhỏ</p>
       <div class="loading-coins"><i></i><i></i><i></i></div>
       <div class="progress"><div class="progress-bar" id="loading-bar"></div></div>
       <p id="loading-text">Đang khởi tạo...</p>
@@ -48,6 +49,7 @@
         <div class="avatar-stage">
           <canvas id="avatar-canvas" aria-label="Nhân vật 3D của bạn (kéo để xoay, nhấn để vẫy tay)"></canvas>
           <span class="lvl-badge" title="Cấp độ">Cấp <b id="lp-level">1</b></span>
+          <span class="stage-hint">Kéo để xoay 3D · Nhấn để ăn mừng</span>
         </div>
         <input id="lp-name" class="name-input" maxlength="18" aria-label="Tên người chơi" placeholder="Tên của bạn">
         <small id="lp-char" class="char-line"></small>
@@ -63,6 +65,16 @@
       </section>
 
       <section class="play-card">
+        <div class="hero-showcase" aria-hidden="true">
+          <div class="hero-art-card">
+            <img src="assets/art/board-concept.png" alt="" loading="lazy">
+            <div class="hero-art-caption"><b>Đảo Thành Phố 3D</b><small>Đài sen vàng · Kênh xanh ngọc · 40 ô đất</small></div>
+          </div>
+          <div class="hero-art-card">
+            <img src="assets/art/character-roster-concept.png" alt="" loading="lazy">
+            <div class="hero-art-caption"><b>6 Nhân Vật Cá Tính</b><small>Hoạt hình 3D sống động</small></div>
+          </div>
+        </div>
         <button id="btn-quick" class="mega-btn green">▶ CHƠI NGAY<small>Tìm phòng công khai & ghép trận</small></button>
         <div class="play-row">
           <button id="btn-create" class="mega-btn blue">➕ TẠO PHÒNG<small>Phòng riêng, mời bạn bè</small></button>

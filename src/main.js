@@ -80,23 +80,27 @@ function characterStatusLine(def) {
 
 // Ảnh đại diện nhân vật được render từ chính mô hình 3D.
 async function renderThumbnails() {
-  const size = 192;
+  const size = 224;
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
   renderer.setSize(size, size);
   renderer.setPixelRatio(1);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
   const scene = new THREE.Scene();
-  scene.add(new THREE.HemisphereLight('#ffffff', '#ffd9b0', 2.2));
-  const key = new THREE.DirectionalLight('#ffffff', 2.4);
-  key.position.set(2, 3, 4);
+  scene.add(new THREE.HemisphereLight('#fffdf5', '#ffd7a8', 2.25));
+  const key = new THREE.DirectionalLight('#fff9eb', 2.5);
+  key.position.set(2.2, 3.4, 4.2);
   scene.add(key);
-  const cam = new THREE.PerspectiveCamera(28, 1, 0.1, 20);
-  cam.position.set(0.35, 1.0, 2.6);
+  const rim = new THREE.DirectionalLight('#5ce1e6', 1.3);
+  rim.position.set(-2.5, 2.2, -2.5);
+  scene.add(rim);
+  const cam = new THREE.PerspectiveCamera(27, 1, 0.1, 20);
+  cam.position.set(0.28, 0.96, 2.45);
   cam.lookAt(0, 0.68, 0);
   const thumbs = {};
   for (const def of CHARACTERS) {
     const ctrl = createCharacter(def, { id: -1, color: def.color, name: def.name }, { allowPlaceholder: true });
-    ctrl.faceYaw(0.25, true);
+    ctrl.faceYaw(0.22, true);
     ctrl.update(0.5);
     scene.add(ctrl.root);
     renderer.render(scene, cam);

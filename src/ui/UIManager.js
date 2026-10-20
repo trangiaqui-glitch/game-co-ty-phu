@@ -721,7 +721,7 @@ export class UIManager {
             <tr><th>Trạng thái</th><td>${p.bankrupt ? '<b class="bad">Phá sản</b>' : p.inJail ? `Trong tù (${p.jailTurns}/${MAX_JAIL_TURNS})` : 'Đang chơi'}</td></tr>
             <tr><th>Công trình</th><td>${b.houses} nhà, ${b.hotels} khách sạn</td></tr>
             <tr><th>Thẻ ra tù</th><td>${p.jailCards.length}</td></tr>
-            <tr><th>Mô hình 3D</th><td>${this.controller?.characterSource(p.id) === 'glb' ? 'GLB' : '<b class="bad">Mô hình tạm (chưa có GLB)</b>'}</td></tr>
+            <tr><th>Mô hình 3D</th><td>${this.controller?.characterSource(p.id) === 'glb' ? '3D GLB' : this.controller?.characterSource(p.id) === 'toon' ? '3D Hoạt hình' : '<b class="bad">Mô hình tạm (chưa có GLB)</b>'}</td></tr>
           </table>
           <h4>Tài sản (${owned.length})</h4>
           <div class="owned-list">${owned.length ? owned.map((t) => `<button class="owned" data-tile="${t.id}" style="--tc:${tileColor(t)}"><i></i>${esc(t.name)}${t.mortgaged ? ' <small class="bad">(thế chấp)</small>' : ''}${t.hotel ? ' 🏨' : t.houses ? ` ${'🏠'.repeat(t.houses)}` : ''}</button>`).join('') : '<p class="empty">Chưa sở hữu ô nào.</p>'}</div>`;

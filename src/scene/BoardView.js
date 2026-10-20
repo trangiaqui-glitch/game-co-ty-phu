@@ -5,16 +5,21 @@ import { BOARD_SIZE } from '../game/BoardManager.js';
 import {
   mat, GEO, part, batchStatic, buildLandmark, buildStation, buildUtility, buildBank, buildQuestionMark,
   buildChest, buildMoneyBag, buildDiamondRing, buildStartGate, buildJail, buildPark, buildGoToJail,
-  buildHotel, buildCar, gold,
+  buildHotel, buildCar, buildPalmTree, gold,
 } from './ModelFactory.js';
 import { buildCityBlocks, Pedestrians, pedestrianPaths, buildBus } from './CityLife.js';
-import { buildFerrisWheel } from './CityLandmarks.js';
-import { grassMaterial, asphaltMaterial, stoneMaterial, foliageGeometry, leafMaterial, woodMaterial } from './Materials.js';
+import {
+  buildFerrisWheel, buildGoldenLotusFountain, buildArchedBridge, buildRedSailBoat,
+} from './CityLandmarks.js';
+import {
+  grassMaterial, asphaltMaterial, stoneMaterial, foliageGeometry, leafMaterial, woodMaterial,
+  waterMaterial, lotusCoinMaterials, roofMaterial,
+} from './Materials.js';
 
 const TOP_Y = BOARD_LAYOUT.tileHeight;
 const HOUSE_X = [-0.66, -0.22, 0.22, 0.66];
 const BAND_Z = -1.22;
-const FONT = '"Baloo 2", "Segoe UI", Arial, sans-serif';
+const FONT = '"Baloo 2", "Be Vietnam Pro", "Segoe UI", Arial, sans-serif';
 const easeOutBack = (t) => 1 + 2.7 * Math.pow(t - 1, 3) + 1.7 * Math.pow(t - 1, 2);
 const easeOutBounce = (t) => {
   const n = 7.5625;
@@ -28,14 +33,15 @@ const easeOutBounce = (t) => {
 // --------------------------------------------------------------- instanced houses
 class HouseInstancer {
   constructor(parent, capacity = 160) {
-    // Nhà xanh kiểu hoạt hình: thân bo tròn, mái ngói đỏ hai dốc, ống khói, cửa chính và hai cửa sổ.
+    // Nhà phố 3D sơn bóng kiểu đồ chơi cao cấp: tường kem ngọc, mái ngói đỏ cam, viền vàng kim, ống khói và cửa sổ sáng.
     const parts = [
-      { geo: new RoundedBoxGeometry(1, 1, 1, 2, 0.12), material: mat('#4CD07D', { roughness: 0.4 }), p: [0, 0.11, 0], s: [0.3, 0.22, 0.3] },
-      { geo: GEO.prism(), material: mat('#D84A2B', { roughness: 0.5 }), p: [0, 0.277, 0], s: [0.2, 0.113, 0.37] },
-      { geo: GEO.box(), material: mat('#8D4B2F'), p: [0.085, 0.3, 0.06], s: [0.045, 0.1, 0.045] },
-      { geo: GEO.box(), material: mat('#FFF7E0'), p: [0, 0.07, -0.151], s: [0.08, 0.13, 0.01] },
-      { geo: GEO.box(), material: mat('#BFE9FF', { roughness: 0.15, metalness: 0.3 }), p: [-0.09, 0.14, -0.151], s: [0.06, 0.06, 0.01] },
-      { geo: GEO.box(), material: mat('#BFE9FF', { roughness: 0.15, metalness: 0.3 }), p: [0.09, 0.14, -0.151], s: [0.06, 0.06, 0.01] },
+      { geo: new RoundedBoxGeometry(1, 1, 1, 2, 0.14), material: mat('#FFFDF7', { roughness: 0.3 }), p: [0, 0.115, 0], s: [0.31, 0.23, 0.31] },
+      { geo: GEO.box(), material: mat('#2EC4B6', { roughness: 0.35 }), p: [0, 0.02, 0], s: [0.33, 0.04, 0.33] },
+      { geo: GEO.prism(), material: roofMaterial('#E54B2B', 2), p: [0, 0.285, 0], s: [0.215, 0.12, 0.38] },
+      { geo: GEO.box(), material: mat('#D97724'), p: [0.09, 0.31, 0.06], s: [0.048, 0.11, 0.048] },
+      { geo: GEO.box(), material: mat('#F5B82E', { metalness: 0.45, roughness: 0.28 }), p: [0, 0.075, -0.156], s: [0.088, 0.14, 0.012] },
+      { geo: GEO.box(), material: mat('#7CE8FF', { roughness: 0.12, metalness: 0.25, emissive: '#38BDF8', emissiveIntensity: 0.2 }), p: [-0.092, 0.145, -0.156], s: [0.064, 0.064, 0.012] },
+      { geo: GEO.box(), material: mat('#7CE8FF', { roughness: 0.12, metalness: 0.25, emissive: '#38BDF8', emissiveIntensity: 0.2 }), p: [0.092, 0.145, -0.156], s: [0.064, 0.064, 0.012] },
     ];
     this.capacity = capacity;
     this.parts = parts.map((pt) => {
@@ -119,87 +125,136 @@ function drawTile(tile) {
   c.width = W;
   c.height = H;
   const g = c.getContext('2d');
-  g.fillStyle = '#FFF8E8';
+
+  // Nền kem ngà ấm có độ sâu nhẹ kiểu thẻ đồ chơi cao cấp
+  const bgGrad = g.createRadialGradient(W * 0.5, H * 0.42, 20, W * 0.5, H * 0.5, H * 0.72);
+  bgGrad.addColorStop(0, '#FFFDF7');
+  bgGrad.addColorStop(0.7, '#FFF7E5');
+  bgGrad.addColorStop(1, '#F3E3C2');
+  g.fillStyle = bgGrad;
   g.fillRect(0, 0, W, H);
-  g.strokeStyle = '#EADBB8';
-  g.lineWidth = 6;
-  roundRect(g, 6, 6, W - 12, H - 12, 18);
+
+  // Viền ngoài vàng đồng ấm + viền sáng bên trong
+  g.strokeStyle = '#DFC492';
+  g.lineWidth = 8;
+  roundRect(g, 5, 5, W - 10, H - 10, 20);
   g.stroke();
+
+  g.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+  g.lineWidth = 3;
+  roundRect(g, 11, 11, W - 22, H - 22, 16);
+  g.stroke();
+
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  const ink = '#2B2340';
+  const ink = '#1F1938';
 
-  const title = (text, y, size = 30, color = ink, maxW = W - 30) => {
+  const title = (text, y, size = 30, color = ink, maxW = W - 28) => {
     g.font = `800 ${size}px ${FONT}`;
-    g.fillStyle = color;
     const lines = wrapText(g, text, maxW);
-    lines.forEach((l, i) => g.fillText(l, W / 2, y + (i - (lines.length - 1) / 2) * size * 1.02));
+    lines.forEach((l, i) => {
+      const ly = y + (i - (lines.length - 1) / 2) * size * 1.04;
+      g.fillStyle = 'rgba(255,255,255,0.75)';
+      g.fillText(l, W / 2, ly + 1.5);
+      g.fillStyle = color;
+      g.fillText(l, W / 2, ly);
+    });
   };
-  const label = (text, y, size = 20, color = '#7a6f8f') => {
+  const label = (text, y, size = 20, color = '#6E5D82') => {
     g.font = `700 ${size}px ${FONT}`;
     g.fillStyle = color;
     g.fillText(text, W / 2, y);
   };
-  const pill = (text, y, bg) => {
+  const pill = (text, y, bg = '#271E45', borderColor = '#F5B82E') => {
     g.font = `800 28px ${FONT}`;
-    const w = g.measureText(text).width + 30;
-    g.fillStyle = bg;
-    roundRect(g, W / 2 - w / 2, y - 20, w, 40, 20);
+    const w = g.measureText(text).width + 34;
+    g.fillStyle = 'rgba(25, 18, 48, 0.16)';
+    roundRect(g, W / 2 - w / 2, y - 18, w, 42, 21);
     g.fill();
-    g.fillStyle = '#fff';
+    g.fillStyle = bg;
+    roundRect(g, W / 2 - w / 2, y - 21, w, 42, 21);
+    g.fill();
+    g.strokeStyle = borderColor;
+    g.lineWidth = 3;
+    roundRect(g, W / 2 - w / 2, y - 21, w, 42, 21);
+    g.stroke();
+    g.fillStyle = '#FFE57F';
     g.fillText(text, W / 2, y + 1);
+  };
+  const headerBand = (color, badgeText = null) => {
+    g.fillStyle = 'rgba(28, 19, 48, 0.15)';
+    roundRect(g, 12, 14, W - 24, 66, 15);
+    g.fill();
+    g.fillStyle = color;
+    roundRect(g, 12, 11, W - 24, 65, 15);
+    g.fill();
+    // Dải bóng sáng trên cùng kiểu sơn mài bóng
+    g.fillStyle = 'rgba(255,255,255,0.36)';
+    roundRect(g, 18, 15, W - 36, 16, 8);
+    g.fill();
+    g.strokeStyle = 'rgba(255,255,255,0.5)';
+    g.lineWidth = 2.5;
+    roundRect(g, 12, 11, W - 24, 65, 15);
+    g.stroke();
+    if (badgeText) {
+      g.font = `800 22px ${FONT}`;
+      g.fillStyle = '#FFFFFF';
+      g.fillText(badgeText, W / 2, 45);
+    }
   };
 
   switch (tile.type) {
     case T.PROPERTY: {
       const color = COLOR_GROUPS[tile.group].color;
-      g.fillStyle = color;
-      roundRect(g, 10, 10, W - 20, 62, 14);
-      g.fill();
-      g.fillStyle = 'rgba(255,255,255,0.35)';
-      g.fillRect(14, 14, W - 28, 12);
-      title(tile.name, 110, tile.name.length > 10 ? 26 : 30);
-      pill(`$${tile.price}`, 165, '#3d3456');
+      headerBand(color);
+      title(tile.name, 114, tile.name.length > 10 ? 26 : 30);
+      pill(`$${tile.price}`, 170, '#271E45', '#F5B82E');
       break;
     }
     case T.STATION:
-      label('NHÀ GA', 40, 22, '#C0392B');
-      title(tile.name, 100, 28);
-      pill(`$${tile.price}`, 165, '#3d3456');
+      headerBand('#0E9F9A', 'NHÀ GA');
+      title(tile.name, 112, 27);
+      pill(`$${tile.price}`, 170, '#1D3557', '#48CAE4');
       break;
     case T.UTILITY:
-      label('DỊCH VỤ', 40, 22, '#0277BD');
-      title(tile.name, 100, 26);
-      pill(`$${tile.price}`, 165, '#3d3456');
+      headerBand('#1E88E5', 'DỊCH VỤ');
+      title(tile.name, 112, 26);
+      pill(`$${tile.price}`, 170, '#1D3557', '#64B5F6');
       break;
     case T.CHANCE:
-      title('CƠ HỘI', 60, 34, '#FF7A00');
+      headerBand('#FF7A18', 'SỰ KIỆN');
+      title('CƠ HỘI', 114, 34, '#D9530F');
       break;
     case T.COMMUNITY:
-      title('KHÍ VẬN', 60, 34, '#2E86DE');
+      headerBand('#1D8CF8', 'KHO BÁU');
+      title('KHÍ VẬN', 114, 34, '#1565C0');
       break;
     case T.TAX:
-      title(tile.name, 70, 28);
-      pill(`Nộp $${tile.amount}`, 140, '#E53935');
+      headerBand('#E53935', 'THUẾ');
+      title(tile.name, 112, 27);
+      pill(`Nộp $${tile.amount}`, 168, '#B71C1C', '#FFCDD2');
       break;
     case T.BANK:
-      title('NGÂN HÀNG', 60, 30, '#B8860B');
-      label('Nhận lãi 5%', 112, 22);
+      headerBand('#D99B16', 'TÀI CHÍNH');
+      title('NGÂN HÀNG', 110, 28, '#9A6700');
+      label('Nhận lãi 5%', 148, 22, '#1E824C');
       break;
     case T.START:
-      title('BẮT ĐẦU', 300, 52, '#E74C3C');
-      label('Nhận $200', 350, 28, '#2E9E4F');
+      headerBand('#E63946', 'KHỞI HÀNH');
+      title('BẮT ĐẦU', 302, 50, '#D62828');
+      pill('Nhận $200', 348, '#1B7F47', '#7AE582');
       break;
     case T.JAIL:
-      label('THĂM TÙ', 345, 34, '#FF7043');
+      title('NHÀ TÙ', 304, 42, '#374151');
+      label('THĂM TÙ', 346, 30, '#E76F51');
       break;
     case T.REST:
-      title('CÔNG VIÊN', 300, 44, '#2E9E4F');
-      label('Nghỉ ngơi', 345, 26);
+      title('CÔNG VIÊN', 300, 44, '#0E9F6E');
+      label('Nghỉ ngơi thư giãn', 345, 25, '#047857');
       break;
     case T.GO_TO_JAIL:
-      title('VÀO TÙ', 300, 52, '#1E3A8A');
-      label('Không nhận $200', 348, 24, '#E53935');
+      title('VÀO TÙ', 300, 50, '#1E3A8A');
+      label('Không nhận $200', 348, 24, '#D62828');
       break;
     default:
       title(tile.name, 100);
@@ -210,7 +265,7 @@ function drawTile(tile) {
   return tex;
 }
 
-function frameGeometry(w, d, thickness) {
+function frameGeometry(w, d, thickness, depth = 0.03) {
   const s = new THREE.Shape();
   s.moveTo(-w / 2, -d / 2); s.lineTo(w / 2, -d / 2); s.lineTo(w / 2, d / 2); s.lineTo(-w / 2, d / 2); s.lineTo(-w / 2, -d / 2);
   const hole = new THREE.Path();
@@ -218,7 +273,7 @@ function frameGeometry(w, d, thickness) {
   const id = d / 2 - thickness;
   hole.moveTo(-iw, -id); hole.lineTo(-iw, id); hole.lineTo(iw, id); hole.lineTo(iw, -id); hole.lineTo(-iw, -id);
   s.holes.push(hole);
-  return new THREE.ExtrudeGeometry(s, { depth: 0.03, bevelEnabled: false }).rotateX(-Math.PI / 2);
+  return new THREE.ExtrudeGeometry(s, { depth, bevelEnabled: false }).rotateX(-Math.PI / 2);
 }
 
 // --------------------------------------------------------------- BoardView
@@ -239,10 +294,10 @@ export class BoardView {
     this.spinners = [];
     this.policeLights = [];
     this.clouds = [];
-    this.animated = []; // công trình có chuyển động (đu quay...)
+    this.animated = []; // công trình có chuyển động (đài phun nước hoa sen, thuyền buồm, đu quay...)
     this.effects = new Set();
     this.speed = 1;
-    this.bankPosition = new THREE.Vector3(0, 2.6, -3.0);
+    this.bankPosition = new THREE.Vector3(0, 2.6, -3.1);
     this.decks = {};
     this._tmpM = new THREE.Matrix4();
     this._tmpQ = new THREE.Quaternion();
@@ -270,10 +325,51 @@ export class BoardView {
   _buildIsland() {
     const half = BOARD_SIZE / 2;
     const s = this.staticRoot;
-    s.add(part(new RoundedBoxGeometry(BOARD_SIZE + 0.6, 0.5, BOARD_SIZE + 0.6, 4, 0.2), stoneMaterial('#EFE3C8', { repeat: 4, roughness: 0.7 }), [0, -0.25, 0]));
-    s.add(part(new RoundedBoxGeometry(BOARD_SIZE + 3.4, 0.7, BOARD_SIZE + 3.4, 4, 0.3), grassMaterial(5), [0, -0.72, 0]));
+    // Nền đá cẩm thạch kem đỡ bàn cờ + khung gỗ trầm viền vàng kim sang trọng như bàn cờ tham chiếu
+    s.add(part(new RoundedBoxGeometry(BOARD_SIZE + 0.55, 0.5, BOARD_SIZE + 0.55, 4, 0.18), stoneMaterial('#F5E9CE', { repeat: 4, roughness: 0.55 }), [0, -0.25, 0]));
+    const woodRim = new THREE.Mesh(frameGeometry(BOARD_SIZE + 0.92, BOARD_SIZE + 0.92, 0.42, 0.24), woodMaterial('#6E3B1E'));
+    woodRim.position.y = -0.02;
+    woodRim.castShadow = true;
+    woodRim.receiveShadow = true;
+    s.add(woodRim);
+    const goldRim = new THREE.Mesh(frameGeometry(BOARD_SIZE + 0.26, BOARD_SIZE + 0.26, 0.12, 0.27), gold());
+    goldRim.position.y = 0.0;
+    s.add(goldRim);
 
-    const rockGeo = new THREE.CylinderGeometry((half + 1.7) * Math.SQRT2, 3.5, 10, 4, 5).rotateY(Math.PI / 4);
+    // Đảo cỏ nhiệt đới và bờ cát vàng bao quanh bàn cờ
+    s.add(part(new RoundedBoxGeometry(BOARD_SIZE + 3.6, 0.7, BOARD_SIZE + 3.6, 4, 0.32), grassMaterial(5), [0, -0.72, 0]));
+    s.add(part(new RoundedBoxGeometry(BOARD_SIZE + 4.5, 0.45, BOARD_SIZE + 4.5, 4, 0.4), stoneMaterial('#F2D8A7', { repeat: 3, roughness: 0.75 }), [0, -0.92, 0]));
+
+    // Mặt nước biển xanh ngọc bao quanh đảo bàn cờ
+    const lagoon = new THREE.Mesh(new THREE.CylinderGeometry(28, 28, 0.25, 48), waterMaterial(10));
+    lagoon.position.set(0, -1.08, 0);
+    lagoon.receiveShadow = true;
+    s.add(lagoon);
+
+    // Đồng xu hoa sen vàng cỡ lớn trang trí ở 4 góc viền bàn cờ
+    const coinMats = lotusCoinMaterials();
+    const coinGeo = new THREE.CylinderGeometry(0.46, 0.46, 0.11, 24);
+    for (const [cx, cz, ry] of [
+      [-half - 0.85, half + 0.85, 0.4],
+      [half + 0.85, half + 0.85, -0.3],
+      [-half - 0.85, -half - 0.85, 0.8],
+      [half + 0.85, -half - 0.85, -0.6],
+    ]) {
+      const coinStack = new THREE.Group();
+      for (let k = 0; k < 3; k++) {
+        const cm = new THREE.Mesh(coinGeo, coinMats);
+        cm.position.set((k % 2) * 0.05, k * 0.115, (k === 2 ? -0.04 : 0));
+        cm.rotation.y = ry + k * 0.5;
+        cm.castShadow = true;
+        cm.receiveShadow = true;
+        cm.userData.dynamic = true;
+        coinStack.add(cm);
+      }
+      coinStack.position.set(cx, -0.32, cz);
+      s.add(coinStack);
+    }
+
+    const rockGeo = new THREE.CylinderGeometry((half + 1.85) * Math.SQRT2, 3.6, 10, 4, 5).rotateY(Math.PI / 4);
     const posAttr = rockGeo.attributes.position;
     for (let i = 0; i < posAttr.count; i++) {
       const y = posAttr.getY(i);
@@ -286,22 +382,26 @@ export class BoardView {
     }
     rockGeo.computeVertexNormals();
     s.add(part(rockGeo, stoneMaterial('#9C7350', { repeat: 3, roughness: 0.95, veins: true }), [0, -6.07, 0]));
-    s.add(part(new THREE.CylinderGeometry((half + 1.75) * Math.SQRT2, (half + 1.2) * Math.SQRT2, 0.8, 4).rotateY(Math.PI / 4), stoneMaterial('#7E5638', { repeat: 4, roughness: 0.95 }), [0, -1.45, 0]));
+    s.add(part(new THREE.CylinderGeometry((half + 1.85) * Math.SQRT2, (half + 1.25) * Math.SQRT2, 0.8, 4).rotateY(Math.PI / 4), stoneMaterial('#7E5638', { repeat: 4, roughness: 0.95 }), [0, -1.45, 0]));
 
-    // Đá trôi nổi xung quanh
+    // Đảo nhỏ nhiệt đới có cây dừa xung quanh
     const rock = stoneMaterial('#9C7350', { repeat: 1, roughness: 0.95, veins: true });
     const grass = grassMaterial();
     const isles = [[-19, -3, 8, 1.4], [20, -4, -6, 1.1], [-8, -6, -20, 1.6], [12, -2.5, 19, 0.9]];
     for (const [x, y, z, k] of isles) {
       s.add(part(GEO.cone(6), rock, [x, y - 0.9 * k, z], [1.3 * k, 1.8 * k, 1.3 * k], [Math.PI, 0, 0]));
       s.add(part(GEO.cyl(6), grass, [x, y + 0.05 * k, z], [1.32 * k, 0.2 * k, 1.32 * k]));
+      const palm = buildPalmTree(0.95 * k);
+      palm.position.set(x, y + 0.14 * k, z);
+      s.add(palm);
     }
   }
 
   // ------------------------------------------------------------ tiles
   _buildTiles() {
-    const baseMat = mat('#FFFFFF', { roughness: 0.6 });
-    const baseGeo = new RoundedBoxGeometry(1, 1, 1, 2, 0.06);
+    const baseMat = mat('#FFF8E7', { roughness: 0.42 });
+    const rimMat = mat('#E5C687', { roughness: 0.38, metalness: 0.18 });
+    const baseGeo = new RoundedBoxGeometry(1, 1, 1, 2, 0.08);
     for (const tile of this.board.tiles) {
       const p = tile.position;
       const group = new THREE.Group();
@@ -309,11 +409,13 @@ export class BoardView {
       group.rotation.y = p.rotY;
       this.staticRoot.add(group);
 
-      group.add(part(baseGeo, baseMat, [0, TOP_Y / 2, 0], [p.width - 0.08, TOP_Y, p.depth - 0.08]));
+      // Đế ô cờ có gờ viền vàng kem nổi rõ chiều sâu
+      group.add(part(baseGeo, rimMat, [0, TOP_Y * 0.46, 0], [p.width - 0.05, TOP_Y * 0.92, p.depth - 0.05]));
+      group.add(part(baseGeo, baseMat, [0, TOP_Y / 2 + 0.01, 0], [p.width - 0.1, TOP_Y, p.depth - 0.1]));
 
-      const topMat = new THREE.MeshStandardMaterial({ map: drawTile(tile), roughness: 0.75 });
+      const topMat = new THREE.MeshStandardMaterial({ map: drawTile(tile), roughness: 0.55, metalness: 0.03 });
       const top = new THREE.Mesh(new THREE.PlaneGeometry(p.width - 0.16, p.depth - 0.16).rotateX(-Math.PI / 2), topMat);
-      top.position.y = TOP_Y + 0.003;
+      top.position.y = TOP_Y + 0.013;
       top.receiveShadow = true;
       top.userData.dynamic = true;
       group.add(top);
@@ -412,8 +514,8 @@ export class BoardView {
   // ------------------------------------------------------------ center city
   _buildCenter() {
     const s = this.staticRoot;
-    const inner = BOARD_SIZE - 2 * BOARD_LAYOUT.cornerSize - 0.4;
-    // Nền trung tâm là bãi cỏ xanh (cỏ lặp dày hơn đảo bên ngoài để ngọn cỏ nhỏ, mịn).
+    const inner = BOARD_SIZE - 2 * BOARD_LAYOUT.cornerSize - 0.35;
+    // Nền trung tâm là bãi cỏ xanh mướt
     const lawn = grassMaterial().clone();
     lawn.map = lawn.map.clone();
     lawn.bumpMap = lawn.bumpMap.clone();
@@ -423,7 +525,6 @@ export class BoardView {
     }
     s.add(part(new RoundedBoxGeometry(inner, 0.08, inner, 3, 0.04), lawn, [0, 0.04, 0]));
 
-    // Đường vòng quanh trung tâm
     const roadShape = (size, r) => {
       const sh = new THREE.Shape();
       const h = size / 2;
@@ -434,20 +535,81 @@ export class BoardView {
       sh.lineTo(-h, -h + r); sh.quadraticCurveTo(-h, -h, -h + r, -h);
       return sh;
     };
-    const outer = roadShape(15.2, 3);
-    outer.holes.push(roadShape(13.4, 2.1));
+
+    // Đường nước xanh ngọc (Turquoise Canal) ôm quanh thành phố đảo + kè đá trắng kem
+    const canalBankShape = roadShape(16.15, 2.75);
+    canalBankShape.holes.push(roadShape(15.05, 2.35));
+    const canalBank = new THREE.Mesh(
+      new THREE.ShapeGeometry(canalBankShape, 16).rotateX(-Math.PI / 2),
+      stoneMaterial('#F4E8CE', { repeat: 2, roughness: 0.65 }),
+    );
+    canalBank.position.y = 0.082;
+    canalBank.receiveShadow = true;
+    s.add(canalBank);
+
+    const canalWaterShape = roadShape(16.02, 2.68);
+    canalWaterShape.holes.push(roadShape(15.18, 2.42));
+    const canalWater = new THREE.Mesh(
+      new THREE.ShapeGeometry(canalWaterShape, 16).rotateX(-Math.PI / 2),
+      waterMaterial(6),
+    );
+    canalWater.position.y = 0.086;
+    canalWater.receiveShadow = true;
+    s.add(canalWater);
+
+    // 4 cây cầu đá vòm cong (Arched Bridges) bắc qua kênh nước xanh ngọc ở 4 hướng Đông - Tây - Nam - Bắc
+    for (const [bx, bz, bry] of [
+      [0, 7.6, Math.PI / 2],
+      [0, -7.6, Math.PI / 2],
+      [7.6, 0, 0],
+      [-7.6, 0, 0],
+    ]) {
+      const bridge = buildArchedBridge(0.92);
+      bridge.position.set(bx, 0.085, bz);
+      bridge.rotation.y = bry;
+      s.add(bridge);
+    }
+
+    // Thuyền buồm đỏ truyền thống trôi nhẹ trên dòng kênh xanh ngọc + lá sen nổi
+    const lotusPadMat = mat('#2EAD6B', { roughness: 0.55 });
+    const lotusPinkMat = mat('#FF7EB6', { roughness: 0.35 });
+    for (const [lx, lz] of [[-5.6, 7.55], [5.4, 7.55], [-5.5, -7.55], [5.5, -7.55], [-7.55, -5.2], [7.55, 5.2]]) {
+      s.add(part(GEO.cyl(12), lotusPadMat, [lx, 0.09, lz], [0.18, 0.012, 0.18]));
+      s.add(part(GEO.cyl(12), lotusPadMat, [lx + 0.24, 0.09, lz + 0.12], [0.13, 0.012, 0.13]));
+      s.add(part(GEO.sphere(), lotusPinkMat, [lx, 0.12, lz], [0.06, 0.05, 0.06]));
+    }
+    for (const [sx, sz, sry, phase] of [
+      [-3.8, 7.6, 0.12, 0],
+      [3.9, -7.6, Math.PI - 0.1, 1.7],
+      [-7.6, 3.7, Math.PI / 2 + 0.1, 3.2],
+      [7.6, -3.8, -Math.PI / 2 - 0.1, 4.8],
+    ]) {
+      const boat = buildRedSailBoat(0.76);
+      boat.position.set(sx, 0.09, sz);
+      boat.rotation.y = sry;
+      boat.userData.update = (t) => {
+        boat.position.y = 0.09 + Math.sin(t * 2.2 + phase) * 0.018;
+        boat.rotation.z = Math.sin(t * 1.8 + phase) * 0.05;
+      };
+      this.dynamicRoot.add(boat);
+      this.animated.push(boat);
+    }
+
+    // Đường vòng quanh trung tâm
+    const outer = roadShape(15.05, 2.35);
+    outer.holes.push(roadShape(13.4, 2.0));
     const road = new THREE.Mesh(new THREE.ShapeGeometry(outer, 12).rotateX(-Math.PI / 2), asphaltMaterial());
     road.position.y = 0.085;
     road.receiveShadow = true;
     s.add(road);
     // Vỉa hè lát đá chạy sát mép trong của đường (dân cư đi bộ ở đây)
-    const walkShape = roadShape(13.4, 2.1);
+    const walkShape = roadShape(13.4, 2.0);
     walkShape.holes.push(roadShape(11.9, 1.4));
-    const walk = new THREE.Mesh(new THREE.ShapeGeometry(walkShape, 12).rotateX(-Math.PI / 2), stoneMaterial('#E8DDC3', { repeat: 0.5, roughness: 0.8 }));
+    const walk = new THREE.Mesh(new THREE.ShapeGeometry(walkShape, 12).rotateX(-Math.PI / 2), stoneMaterial('#EFE4CA', { repeat: 0.5, roughness: 0.72 }));
     walk.position.y = 0.09;
     walk.receiveShadow = true;
     s.add(walk);
-    const pts = roadShape(14.3, 2.55).getSpacedPoints(80).map((p) => new THREE.Vector3(p.x, 0.1, -p.y));
+    const pts = roadShape(14.22, 2.2).getSpacedPoints(80).map((p) => new THREE.Vector3(p.x, 0.1, -p.y));
     this.roadCurve = new THREE.CatmullRomCurve3(pts.slice(0, -1), true);
     const dash = mat('#FFF8E1');
     for (let i = 0; i < 48; i++) {
@@ -457,63 +619,90 @@ export class BoardView {
       s.add(part(GEO.box(), dash, [p.x, 0.092, p.z], [0.06, 0.01, 0.3], [0, Math.atan2(t.x, t.z), 0]));
     }
 
+    // Quảng trường trung tâm lát đá kem viền vàng + Đài phun nước Hoa Sen Vàng (Golden Lotus Fountain)
+    s.add(part(GEO.cyl(32), stoneMaterial('#F7EBD2', { repeat: 2, roughness: 0.65 }), [0, 0.088, 0.15], [2.15, 0.025, 2.15]));
+    s.add(part(GEO.cyl(32), gold(), [0, 0.092, 0.15], [1.92, 0.028, 1.92]));
+    s.add(part(GEO.cyl(32), stoneMaterial('#FFFDF7', { repeat: 1, roughness: 0.5 }), [0, 0.095, 0.15], [1.84, 0.03, 1.84]));
+    for (let a = 0; a < 4; a++) {
+      const ang = (a * Math.PI) / 2;
+      s.add(part(GEO.box(), stoneMaterial('#F4E6C8', { repeat: 1, roughness: 0.65 }), [Math.cos(ang) * 2.2, 0.089, 0.15 + Math.sin(ang) * 2.2], [0.7, 0.024, 0.7]));
+    }
+    const fountain = buildGoldenLotusFountain(1.05);
+    fountain.position.set(0, 0.095, 0.15);
+    this.dynamicRoot.add(fountain);
+    this.animated.push(fountain);
+
     // Ngân hàng trung ương (nguồn tiền của mọi giao dịch)
-    const bank = buildBank(2.6);
-    bank.position.set(0, 0.08, -3.0);
+    const bank = buildBank(2.45);
+    bank.position.set(0, 0.08, -3.15);
     bank.rotation.y = Math.PI;
     s.add(bank);
-    this.bankPosition.set(0, 2.4, -3.0);
+    this.bankPosition.set(0, 2.4, -3.15);
 
-    // Biển hiệu
+    // Biển hiệu CỜ TỶ PHÚ nổi bật phía trước quảng trường hoa sen
     const logoTex = this.assets.canvasTexture('logo', 1024, 300, (g, w, h) => {
       g.clearRect(0, 0, w, h);
       g.textAlign = 'center';
       g.textBaseline = 'middle';
-      g.font = `800 150px ${FONT}`;
-      g.lineWidth = 22;
-      g.strokeStyle = '#3d2b7a';
-      g.strokeText('CỜ TỶ PHÚ', w / 2, h / 2 - 10);
-      const grad = g.createLinearGradient(0, 40, 0, 240);
-      grad.addColorStop(0, '#FFE259');
-      grad.addColorStop(1, '#FF8A00');
+      g.font = `800 148px ${FONT}`;
+      g.lineWidth = 26;
+      g.strokeStyle = '#261758';
+      g.strokeText('CỜ TỶ PHÚ', w / 2, h / 2 - 6);
+      const grad = g.createLinearGradient(0, 35, 0, 245);
+      grad.addColorStop(0, '#FFF380');
+      grad.addColorStop(0.55, '#FFC82E');
+      grad.addColorStop(1, '#FF7A00');
       g.fillStyle = grad;
-      g.fillText('CỜ TỶ PHÚ', w / 2, h / 2 - 10);
+      g.fillText('CỜ TỶ PHÚ', w / 2, h / 2 - 6);
     });
-    const logo = new THREE.Mesh(new THREE.PlaneGeometry(8.4, 2.46).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: logoTex, transparent: true, roughness: 0.5 }));
-    logo.position.set(0, 0.1, 4.3);
+    const logo = new THREE.Mesh(new THREE.PlaneGeometry(7.8, 2.28).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: logoTex, transparent: true, roughness: 0.42 }));
+    logo.position.set(0, 0.105, 5.25);
     logo.userData.dynamic = true;
     s.add(logo);
 
     // Bộ thẻ Cơ hội / Khí vận
-    this._buildDeck('chance', -3.7, 0.9, 0.35, '#FF8A00', 'CƠ HỘI');
-    this._buildDeck('community', 3.7, 0.9, -0.35, '#2E86DE', 'KHÍ VẬN');
+    this._buildDeck('chance', -5.15, 1.55, 0.35, '#FF7A18', 'CƠ HỘI');
+    this._buildDeck('community', 5.15, 1.55, -0.35, '#1D8CF8', 'KHÍ VẬN');
 
-    // Cây xanh và đèn đường (instanced)
+    // Cây xanh, cây dừa nhiệt đới và đèn đường
     const treePts = [];
-    for (const [x, z] of [[-3.6, -2.2], [3.6, -2.2], [-3.4, 2.6], [3.6, 2.6], [-1.6, -5.7], [1.6, -5.7], [-6.0, 0.6], [6.0, 0.6], [-2.2, 5.8], [2.2, 5.9], [0, 5.95]]) {
-      treePts.push({ x, z, s: 0.7 + ((x * 7 + z * 3) % 3 + 3) % 3 * 0.1 });
+    for (const [x, z] of [[-2.0, -1.7], [2.0, -1.7], [-2.0, 1.85], [2.0, 1.85], [-1.7, -5.6], [1.7, -5.6], [-5.8, 0.7], [5.8, 0.7], [-2.4, 5.75], [2.4, 5.75]]) {
+      treePts.push({ x, z, s: 0.72 + ((x * 7 + z * 3) % 3 + 3) % 3 * 0.09 });
     }
-    for (const v of [-4, 0, 4]) {
-      treePts.push({ x: 8.15, z: v, s: 0.8 }, { x: -8.15, z: v, s: 0.8 }, { x: v, z: 8.15, s: 0.8 }, { x: v, z: -8.15, s: 0.8 });
+    for (const v of [-4.2, -1.8, 1.8, 4.2]) {
+      treePts.push({ x: 8.18, z: v, s: 0.78 }, { x: -8.18, z: v, s: 0.78 }, { x: v, z: 8.18, s: 0.78 }, { x: v, z: -8.18, s: 0.78 });
     }
     this.staticRoot.add(this._treeInstances(treePts));
+
+    // Hàng dừa nhiệt đới dọc bờ kênh xanh ngọc và quảng trường
+    for (const [px, pz, ps, pry] of [
+      [-6.8, -6.8, 0.88, 0.5], [6.8, -6.8, 0.9, -0.6],
+      [-6.8, 6.8, 0.9, 1.2], [6.8, 6.8, 0.88, -1.1],
+      [-2.15, 0.15, 0.78, 0.3], [2.15, 0.15, 0.78, -0.4],
+    ]) {
+      const palm = buildPalmTree(ps);
+      palm.position.set(px, 0.08, pz);
+      palm.rotation.y = pry;
+      this.staticRoot.add(palm);
+    }
+
     this.staticRoot.add(buildCityBlocks());
     this.people = new Pedestrians(this.dynamicRoot, pedestrianPaths(), 120);
 
     // Đu quay quay chậm bên phải thành phố
     const wheel = buildFerrisWheel();
-    wheel.position.set(5.2, 0.08, -0.55);
+    wheel.position.set(5.25, 0.08, -0.55);
     wheel.scale.setScalar(0.85);
     this.dynamicRoot.add(wheel);
     this.animated.push(wheel);
 
     const lampPole = mat('#37474F', { metalness: 0.5, roughness: 0.4 });
-    const lampHead = mat('#FFF59D', { emissive: '#FFEB3B', emissiveIntensity: 0.7 });
+    const lampHead = mat('#FFF59D', { emissive: '#FFEB3B', emissiveIntensity: 0.75 });
     for (let i = 0; i < 12; i++) {
       const p = this.roadCurve.getPointAt(i / 12);
       const dir = new THREE.Vector3(p.x, 0, p.z).normalize();
-      const x = p.x + dir.x * 1.05;
-      const z = p.z + dir.z * 1.05;
+      const x = p.x - dir.x * 0.88;
+      const z = p.z - dir.z * 0.88;
       s.add(part(GEO.cyl(8), lampPole, [x, 0.5, z], [0.035, 0.9, 0.035]));
       s.add(part(GEO.sphere(), lampHead, [x, 0.98, z], [0.09, 0.09, 0.09]));
     }
@@ -521,8 +710,8 @@ export class BoardView {
     // Xe chạy vòng quanh hai chiều: ô tô nhiều màu + xe buýt.
     this.cars = [];
     const traffic = [
-      ['#E53935', 0.0, 1], ['#FFB300', 0.5, 1], ['#1E88E5', 0.25, 1], ['#43A047', 0.75, 1],
-      ['#8E24AA', 0.1, -1], ['#ECEFF1', 0.42, -1], ['#FB8C00', 0.68, -1],
+      ['#FF5E5B', 0.0, 1], ['#FFD147', 0.5, 1], ['#00B4D8', 0.25, 1], ['#2EC4B6', 0.75, 1],
+      ['#9B5DE5', 0.1, -1], ['#FFFDF7', 0.42, -1], ['#FF9F1C', 0.68, -1],
     ];
     for (const [color, offset, dir] of traffic) {
       const car = buildCar(color);
@@ -530,7 +719,7 @@ export class BoardView {
       this.dynamicRoot.add(car);
       this.cars.push({ obj: car, offset, dir });
     }
-    for (const [offset, dir, color] of [[0.88, 1, '#F2B134'], [0.3, -1, '#E74C3C']]) {
+    for (const [offset, dir, color] of [[0.88, 1, '#F5B82E'], [0.3, -1, '#E63946']]) {
       const bus = buildBus(color);
       bus.scale.setScalar(1.15);
       this.dynamicRoot.add(bus);
@@ -543,29 +732,35 @@ export class BoardView {
     g.position.set(x, 0.08, z);
     g.rotation.y = rotY;
     const tex = this.assets.canvasTexture(`deck-${kind}`, 256, 360, (c, w, h) => {
-      c.fillStyle = color;
+      const grad = c.createLinearGradient(0, 0, w, h);
+      grad.addColorStop(0, color);
+      grad.addColorStop(1, kind === 'chance' ? '#D9480F' : '#155EEF');
+      c.fillStyle = grad;
       roundRect(c, 0, 0, w, h, 26);
       c.fill();
-      c.strokeStyle = '#ffffff';
+      c.strokeStyle = '#FFE57F';
       c.lineWidth = 10;
       roundRect(c, 14, 14, w - 28, h - 28, 18);
       c.stroke();
-      c.fillStyle = '#ffffff';
+      c.fillStyle = '#FFFFFF';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
       c.font = `800 120px ${FONT}`;
-      c.fillText('?', w / 2, h / 2 - 30);
-      c.font = `800 40px ${FONT}`;
-      c.fillText(text, w / 2, h - 70);
+      c.fillText(kind === 'chance' ? '?' : '★', w / 2, h / 2 - 28);
+      c.font = `800 38px ${FONT}`;
+      c.fillStyle = '#FFF3B0';
+      c.fillText(text, w / 2, h - 68);
     });
-    const side = mat('#ffffff', { roughness: 0.6 });
-    const face = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.45 });
+    const side = mat('#FFF8E7', { roughness: 0.45 });
+    const face = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.35, metalness: 0.08 });
     const cardGeo = new RoundedBoxGeometry(1.0, 0.03, 1.4, 2, 0.012);
+    // Đế khay vàng kim giữ bộ bài
+    g.add(part(GEO.rbox(), gold(), [0, 0.01, 0], [1.14, 0.025, 1.54]));
     for (let i = 0; i < 7; i++) {
-      g.add(part(cardGeo, side, [Math.sin(i * 3.1) * 0.02, 0.015 + i * 0.032, Math.cos(i * 2.3) * 0.02]));
+      g.add(part(cardGeo, side, [Math.sin(i * 3.1) * 0.02, 0.025 + i * 0.032, Math.cos(i * 2.3) * 0.02]));
     }
     const top = new THREE.Mesh(new THREE.PlaneGeometry(0.96, 1.36).rotateX(-Math.PI / 2), face);
-    top.position.y = 0.015 + 7 * 0.032 + 0.002;
+    top.position.y = 0.025 + 7 * 0.032 + 0.002;
     top.userData.dynamic = true;
     g.add(top);
     this.staticRoot.add(g);
@@ -587,7 +782,7 @@ export class BoardView {
     leaf.color.set('#ffffff');
     // 3 cụm lá lệch nhau cho mỗi cây: trông như tán cây thật, không còn hình cầu trơn.
     const clusters = [0, 1, 2].map(() => new THREE.InstancedMesh(foliageGeometry(), leaf, points.length));
-    const colors = ['#3F9B3F', '#2F8A3C', '#5BAF48', '#76BC4B', '#E88FB0'];
+    const colors = ['#2DBE60', '#1E9E52', '#4BD670', '#70E068', '#FF85B3'];
     const offsets = [
       { x: 0, y: 0.66, z: 0, r: 0.36, h: 0.32 },
       { x: 0.17, y: 0.58, z: 0.1, r: 0.24, h: 0.22 },
@@ -621,14 +816,26 @@ export class BoardView {
   }
 
   _buildTreeRing() {
-    const h = BOARD_SIZE / 2 + 1.05;
+    const h = BOARD_SIZE / 2 + 1.15;
     const pts = [];
     for (let i = -6; i <= 6; i++) {
       const t = i * 2.05;
-      const s = 0.75 + ((i + 6) % 3) * 0.12;
+      const s = 0.78 + ((i + 6) % 3) * 0.12;
       pts.push({ x: t, z: h, s }, { x: t, z: -h, s }, { x: h, z: t, s }, { x: -h, z: t, s });
     }
     this.staticRoot.add(this._treeInstances(pts));
+    // Cây dừa nhiệt đới xen kẽ ở vành ngoài đảo
+    for (const [px, pz, ps, pry] of [
+      [-12.2, 12.2, 1.05, 0.4], [12.2, 12.2, 1.0, -0.5],
+      [-12.2, -12.2, 1.0, 1.1], [12.2, -12.2, 1.08, -1.2],
+      [0, 12.4, 0.92, 0.2], [0, -12.4, 0.92, -0.8],
+      [12.4, 0, 0.92, 0.9], [-12.4, 0, 0.92, -0.3],
+    ]) {
+      const palm = buildPalmTree(ps);
+      palm.position.set(px, -0.35, pz);
+      palm.rotation.y = pry;
+      this.staticRoot.add(palm);
+    }
   }
 
   _buildClouds() {
