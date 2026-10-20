@@ -1,5 +1,5 @@
 # Dữ liệu người chơi do server.js tạo (chứa token đăng nhập của tài khoản khách) — không commit
-data/
+/data/
 
 node_modules/
 *.log
