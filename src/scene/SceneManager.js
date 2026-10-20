@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 export const QUALITY_PRESETS = {
   high: { label: 'Cao', shadows: true, shadowMapSize: 2048, pixelRatio: 2, particles: 1 },
@@ -13,18 +12,25 @@ export class SceneManager {
     this.container = container;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.0;
+    this.renderer.toneMappingExposure = 1.05;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
-    this.scene.background = this._makeSkyTexture();
-    this.scene.fog = new THREE.Fog('#cfe9ff', 70, 150);
+    this.scene.fog = new THREE.Fog('#dcebf5', 75, 170);
 
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 400);
 
+    // Bầu trời có mặt trời thật: vừa là nền vừa là ánh sáng môi trường để kính, sơn xe, kim loại phản chiếu.
+    const sunDir = new THREE.Vector3(14, 28, 16).normalize();
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(300, 32, 16), this._skyMaterial(sunDir, false));
+    dome.renderOrder = -10;
+    this.scene.add(dome);
+    const envScene = new THREE.Scene();
+    envScene.add(new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), this._skyMaterial(sunDir, true)));
     const pmrem = new THREE.PMREMGenerator(this.renderer);
-    this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    this.scene.environment = pmrem.fromScene(envScene, 0.02).texture;
     pmrem.dispose();
 
     this._setupLights();
@@ -41,27 +47,38 @@ export class SceneManager {
     this.renderer.setAnimationLoop(() => this._tick());
   }
 
-  _makeSkyTexture() {
-    const c = document.createElement('canvas');
-    c.width = 4;
-    c.height = 512;
-    const g = c.getContext('2d');
-    const grad = g.createLinearGradient(0, 0, 0, 512);
-    grad.addColorStop(0, '#6EC6FF');
-    grad.addColorStop(0.55, '#BDE6FF');
-    grad.addColorStop(1, '#FFE9C7');
-    g.fillStyle = grad;
-    g.fillRect(0, 0, 4, 512);
-    const tex = new THREE.CanvasTexture(c);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
+  // Bầu trời gradient + quầng và đĩa mặt trời. `linear` = xuất màu tuyến tính (dùng làm môi trường PBR).
+  _skyMaterial(sunDir, linear) {
+    return new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      depthWrite: false,
+      fog: false,
+      uniforms: { sunDir: { value: sunDir.clone() }, linear: { value: linear ? 1 : 0 } },
+      vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader: `
+        varying vec3 vDir; uniform vec3 sunDir; uniform float linear;
+        void main(){
+          vec3 d = normalize(vDir);
+          float h = d.y;
+          vec3 horizon = vec3(0.93, 0.95, 0.96);
+          vec3 mid = vec3(0.58, 0.78, 0.96);
+          vec3 top = vec3(0.17, 0.42, 0.82);
+          vec3 col = mix(horizon, mid, smoothstep(0.0, 0.22, h));
+          col = mix(col, top, smoothstep(0.18, 0.85, h));
+          col = mix(col, vec3(0.78, 0.84, 0.82), smoothstep(0.0, -0.35, h));
+          float s = max(dot(d, sunDir), 0.0);
+          col += vec3(1.0, 0.86, 0.62) * (pow(s, 900.0) * 6.0 + pow(s, 24.0) * 0.35 + pow(s, 5.0) * 0.12);
+          if (linear > 0.5) col = pow(col, vec3(2.2)) * 1.1;
+          gl_FragColor = vec4(col, 1.0);
+        }`,
+    });
   }
 
   _setupLights() {
-    this.hemi = new THREE.HemisphereLight('#dff1ff', '#f2d7b0', 0.9);
+    this.hemi = new THREE.HemisphereLight('#cfe6ff', '#d9c7a3', 0.5);
     this.scene.add(this.hemi);
 
-    this.sun = new THREE.DirectionalLight('#fff4e0', 2.4);
+    this.sun = new THREE.DirectionalLight('#fff0d6', 2.8);
     this.sun.position.set(14, 28, 16);
     this.sun.target.position.set(0, 0, 0);
     const s = this.sun.shadow;
@@ -72,6 +89,7 @@ export class SceneManager {
     s.camera.near = 5;
     s.camera.far = 80;
     s.bias = -0.0004;
+    s.radius = 3;
     s.normalBias = 0.025;
     this.scene.add(this.sun, this.sun.target);
 

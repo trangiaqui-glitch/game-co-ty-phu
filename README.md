@@ -314,3 +314,18 @@ git push -u origin main
 ## Giấy phép
 
 Mã nguồn: [MIT](LICENSE). Mô hình nhân vật Quaternius và mô hình kiểm thử RobotExpressive: CC0 1.0. three.js: MIT. Chi tiết xem [ASSET_LICENSES.md](ASSET_LICENSES.md).
+
+## Deploy online (GitHub Pages + máy chủ Node)
+
+GitHub Pages chỉ host file tĩnh, **không chạy được `server.js`**, nên bản trên `*.github.io` sẽ báo "Không kết nối được máy chủ online" nếu chưa có máy chủ riêng.
+
+1. Deploy máy chủ lên [Render](https://render.com) (miễn phí): đăng nhập bằng GitHub → **New → Blueprint** → chọn repo này (đã có sẵn `render.yaml`). Hoặc **New → Web Service**, Start command: `node server.js`.
+2. Sau khi deploy xong, mở `https://<tên>.onrender.com/api/health` phải thấy `{"ok":true,...}`.
+3. Điền URL đó vào `src/net/config.js`:
+   ```js
+   export const ONLINE_SERVER = 'https://<tên>.onrender.com';
+   ```
+   rồi commit/push để GitHub Pages cập nhật.
+4. Thử nhanh không cần sửa code: mở `https://<user>.github.io/<repo>/?server=https://<tên>.onrender.com` (được ghi nhớ trong trình duyệt; `?server=` rỗng để xoá).
+
+Lưu ý: gói Free của Render "ngủ" sau ~15 phút không dùng, lần đầu truy cập mất ~30–60 giây để khởi động; hồ sơ người chơi (`data/profiles.json`) bị xoá khi máy chủ khởi động lại. Có thể giới hạn tên miền gọi API bằng biến môi trường `ALLOWED_ORIGIN=https://<user>.github.io`.

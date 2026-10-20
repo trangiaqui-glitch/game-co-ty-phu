@@ -7,6 +7,8 @@ import {
   buildChest, buildMoneyBag, buildDiamondRing, buildStartGate, buildJail, buildPark, buildGoToJail,
   buildHotel, buildCar, gold,
 } from './ModelFactory.js';
+import { buildCityBlocks, Pedestrians, pedestrianPaths, buildBus } from './CityLife.js';
+import { grassMaterial, asphaltMaterial, stoneMaterial, foliageGeometry, leafMaterial, woodMaterial } from './Materials.js';
 
 const TOP_Y = BOARD_LAYOUT.tileHeight;
 const HOUSE_X = [-0.66, -0.22, 0.22, 0.66];
@@ -262,8 +264,8 @@ export class BoardView {
   _buildIsland() {
     const half = BOARD_SIZE / 2;
     const s = this.staticRoot;
-    s.add(part(new RoundedBoxGeometry(BOARD_SIZE + 0.6, 0.5, BOARD_SIZE + 0.6, 4, 0.2), mat('#FFF1D2', { roughness: 0.7 }), [0, -0.25, 0]));
-    s.add(part(new RoundedBoxGeometry(BOARD_SIZE + 3.4, 0.7, BOARD_SIZE + 3.4, 4, 0.3), mat('#79D45E', { roughness: 0.85 }), [0, -0.72, 0]));
+    s.add(part(new RoundedBoxGeometry(BOARD_SIZE + 0.6, 0.5, BOARD_SIZE + 0.6, 4, 0.2), stoneMaterial('#EFE3C8', { repeat: 4, roughness: 0.7 }), [0, -0.25, 0]));
+    s.add(part(new RoundedBoxGeometry(BOARD_SIZE + 3.4, 0.7, BOARD_SIZE + 3.4, 4, 0.3), grassMaterial(5), [0, -0.72, 0]));
 
     const rockGeo = new THREE.CylinderGeometry((half + 1.7) * Math.SQRT2, 3.5, 10, 4, 5).rotateY(Math.PI / 4);
     const posAttr = rockGeo.attributes.position;
@@ -277,12 +279,12 @@ export class BoardView {
       }
     }
     rockGeo.computeVertexNormals();
-    s.add(part(rockGeo, mat('#B07A4F', { roughness: 0.95, flatShading: true }), [0, -6.07, 0]));
-    s.add(part(new THREE.CylinderGeometry((half + 1.75) * Math.SQRT2, (half + 1.2) * Math.SQRT2, 0.8, 4).rotateY(Math.PI / 4), mat('#8A5A3B', { roughness: 0.95 }), [0, -1.45, 0]));
+    s.add(part(rockGeo, stoneMaterial('#9C7350', { repeat: 3, roughness: 0.95, veins: true }), [0, -6.07, 0]));
+    s.add(part(new THREE.CylinderGeometry((half + 1.75) * Math.SQRT2, (half + 1.2) * Math.SQRT2, 0.8, 4).rotateY(Math.PI / 4), stoneMaterial('#7E5638', { repeat: 4, roughness: 0.95 }), [0, -1.45, 0]));
 
     // Đá trôi nổi xung quanh
-    const rock = mat('#A9744C', { roughness: 0.95, flatShading: true });
-    const grass = mat('#79D45E', { roughness: 0.85 });
+    const rock = stoneMaterial('#9C7350', { repeat: 1, roughness: 0.95, veins: true });
+    const grass = grassMaterial();
     const isles = [[-19, -3, 8, 1.4], [20, -4, -6, 1.1], [-8, -6, -20, 1.6], [12, -2.5, 19, 0.9]];
     for (const [x, y, z, k] of isles) {
       s.add(part(GEO.cone(6), rock, [x, y - 0.9 * k, z], [1.3 * k, 1.8 * k, 1.3 * k], [Math.PI, 0, 0]));
@@ -405,7 +407,7 @@ export class BoardView {
   _buildCenter() {
     const s = this.staticRoot;
     const inner = BOARD_SIZE - 2 * BOARD_LAYOUT.cornerSize - 0.4;
-    s.add(part(new RoundedBoxGeometry(inner, 0.08, inner, 3, 0.04), mat('#A6E58F', { roughness: 0.9 }), [0, 0.04, 0]));
+    s.add(part(new RoundedBoxGeometry(inner, 0.08, inner, 3, 0.04), stoneMaterial('#D6CBB3', { repeat: 5, roughness: 0.85 }), [0, 0.04, 0]));
 
     // Đường vòng quanh trung tâm
     const roadShape = (size, r) => {
@@ -420,7 +422,7 @@ export class BoardView {
     };
     const outer = roadShape(15.2, 3);
     outer.holes.push(roadShape(13.4, 2.1));
-    const road = new THREE.Mesh(new THREE.ShapeGeometry(outer, 12).rotateX(-Math.PI / 2), mat('#5E6A7D', { roughness: 0.85 }));
+    const road = new THREE.Mesh(new THREE.ShapeGeometry(outer, 12).rotateX(-Math.PI / 2), asphaltMaterial());
     road.position.y = 0.085;
     road.receiveShadow = true;
     s.add(road);
@@ -467,14 +469,15 @@ export class BoardView {
 
     // Cây xanh và đèn đường (instanced)
     const treePts = [];
-    for (const [x, z] of [[-5.0, -5.0], [5.0, -5.0], [-5.1, 5.1], [5.1, 5.1]]) {
-      for (let i = 0; i < 4; i++) treePts.push({ x: x + Math.cos(i * 1.7) * 0.6, z: z + Math.sin(i * 1.7) * 0.6, s: 0.85 + (i % 3) * 0.15 });
+    for (const [x, z] of [[-3.6, -2.2], [3.6, -2.2], [-3.4, 2.6], [3.6, 2.6], [-1.6, -5.7], [1.6, -5.7], [-6.0, 0.6], [6.0, 0.6], [-2.2, 5.8], [2.2, 5.9], [0, 5.95]]) {
+      treePts.push({ x, z, s: 0.7 + ((x * 7 + z * 3) % 3 + 3) % 3 * 0.1 });
     }
     for (const v of [-4, 0, 4]) {
       treePts.push({ x: 8.15, z: v, s: 0.8 }, { x: -8.15, z: v, s: 0.8 }, { x: v, z: 8.15, s: 0.8 }, { x: v, z: -8.15, s: 0.8 });
     }
-    for (const x of [-3.2, -2.2, 2.2, 3.2]) treePts.push({ x, z: -5.2, s: 0.85 });
     this.staticRoot.add(this._treeInstances(treePts));
+    this.staticRoot.add(buildCityBlocks());
+    this.people = new Pedestrians(this.dynamicRoot, pedestrianPaths(), 80);
 
     const lampPole = mat('#37474F', { metalness: 0.5, roughness: 0.4 });
     const lampHead = mat('#FFF59D', { emissive: '#FFEB3B', emissiveIntensity: 0.7 });
@@ -487,13 +490,23 @@ export class BoardView {
       s.add(part(GEO.sphere(), lampHead, [x, 0.98, z], [0.09, 0.09, 0.09]));
     }
 
-    // Xe chạy vòng quanh
+    // Xe chạy vòng quanh hai chiều: ô tô nhiều màu + xe buýt.
     this.cars = [];
-    for (const [color, offset] of [['#E53935', 0], ['#FFB300', 0.5]]) {
+    const traffic = [
+      ['#E53935', 0.0, 1], ['#FFB300', 0.5, 1], ['#1E88E5', 0.25, 1], ['#43A047', 0.75, 1],
+      ['#8E24AA', 0.1, -1], ['#ECEFF1', 0.42, -1], ['#FB8C00', 0.68, -1],
+    ];
+    for (const [color, offset, dir] of traffic) {
       const car = buildCar(color);
-      car.scale.setScalar(1.25);
+      car.scale.setScalar(1.2);
       this.dynamicRoot.add(car);
-      this.cars.push({ obj: car, offset });
+      this.cars.push({ obj: car, offset, dir });
+    }
+    for (const [offset, dir, color] of [[0.88, 1, '#F2B134'], [0.3, -1, '#E74C3C']]) {
+      const bus = buildBus(color);
+      bus.scale.setScalar(1.15);
+      this.dynamicRoot.add(bus);
+      this.cars.push({ obj: bus, offset, dir });
     }
   }
 
@@ -540,27 +553,38 @@ export class BoardView {
 
   _treeInstances(points) {
     const g = new THREE.Group();
-    const trunk = new THREE.InstancedMesh(GEO.cyl(8), mat('#8B5A2B'), points.length);
-    const crown = new THREE.InstancedMesh(GEO.ico(), new THREE.MeshStandardMaterial({ roughness: 0.75, flatShading: true }), points.length);
-    const top = new THREE.InstancedMesh(GEO.ico(), new THREE.MeshStandardMaterial({ roughness: 0.75, flatShading: true }), points.length);
-    const colors = ['#3DBE5C', '#2FA84F', '#5ACF6B', '#7BD36A', '#F48FB1'];
+    const trunkGeo = new THREE.CylinderGeometry(0.6, 1, 1, 9);
+    const trunk = new THREE.InstancedMesh(trunkGeo, woodMaterial('#6B4A2E'), points.length);
+    const leaf = leafMaterial().clone();
+    leaf.color.set('#ffffff');
+    // 3 cụm lá lệch nhau cho mỗi cây: trông như tán cây thật, không còn hình cầu trơn.
+    const clusters = [0, 1, 2].map(() => new THREE.InstancedMesh(foliageGeometry(), leaf, points.length));
+    const colors = ['#3F9B3F', '#2F8A3C', '#5BAF48', '#76BC4B', '#E88FB0'];
+    const offsets = [
+      { x: 0, y: 0.66, z: 0, r: 0.36, h: 0.32 },
+      { x: 0.17, y: 0.58, z: 0.1, r: 0.24, h: 0.22 },
+      { x: -0.12, y: 0.9, z: -0.05, r: 0.24, h: 0.24 },
+    ];
     const m = new THREE.Matrix4();
     const q = new THREE.Quaternion();
     const c = new THREE.Color();
+    const up = new THREE.Vector3(0, 1, 0);
     points.forEach((p, i) => {
       const s = p.s || 1;
-      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), i * 1.3);
-      m.compose(new THREE.Vector3(p.x, 0.25 * s, p.z), q, new THREE.Vector3(0.07 * s, 0.5 * s, 0.07 * s));
+      q.setFromAxisAngle(up, i * 1.3);
+      m.compose(new THREE.Vector3(p.x, 0.25 * s, p.z), q, new THREE.Vector3(0.05 * s, 0.5 * s, 0.05 * s));
       trunk.setMatrixAt(i, m);
-      m.compose(new THREE.Vector3(p.x, 0.68 * s, p.z), q, new THREE.Vector3(0.36 * s, 0.4 * s, 0.36 * s));
-      crown.setMatrixAt(i, m);
-      m.compose(new THREE.Vector3(p.x, 0.98 * s, p.z), q, new THREE.Vector3(0.24 * s, 0.26 * s, 0.24 * s));
-      top.setMatrixAt(i, m);
       c.set(colors[i % colors.length]);
-      crown.setColorAt(i, c);
-      top.setColorAt(i, c.multiplyScalar(1.1));
+      clusters.forEach((cl, k) => {
+        const o = offsets[k];
+        const ox = (o.x * Math.cos(i * 1.3) - o.z * Math.sin(i * 1.3)) * s;
+        const oz = (o.x * Math.sin(i * 1.3) + o.z * Math.cos(i * 1.3)) * s;
+        m.compose(new THREE.Vector3(p.x + ox, o.y * s, p.z + oz), q, new THREE.Vector3(o.r * s, o.h * s, o.r * s));
+        cl.setMatrixAt(i, m);
+        cl.setColorAt(i, c.clone().multiplyScalar(0.9 + k * 0.1));
+      });
     });
-    for (const im of [trunk, crown, top]) {
+    for (const im of [trunk, ...clusters]) {
       im.castShadow = true;
       im.receiveShadow = true;
       g.add(im);
@@ -846,14 +870,16 @@ export class BoardView {
     }
     if (this.roadCurve) {
       for (const car of this.cars) {
-        const u = (elapsed * 0.025 + car.offset) % 1;
+        const dir = car.dir || 1;
+        const u = (((elapsed * 0.025 * dir + car.offset) % 1) + 1) % 1;
         const p = this.roadCurve.getPointAt(u);
-        const t = this.roadCurve.getTangentAt(u);
-        const side = new THREE.Vector3(t.z, 0, -t.x).multiplyScalar(0.22);
+        const t = this.roadCurve.getTangentAt(u).multiplyScalar(dir);
+        const side = new THREE.Vector3(t.z, 0, -t.x).multiplyScalar(0.24);
         car.obj.position.set(p.x + side.x, 0.09, p.z + side.z);
         car.obj.rotation.y = Math.atan2(t.x, t.z) - Math.PI / 2;
       }
     }
+    this.people?.update(dt, elapsed);
     for (const c of this.clouds) {
       c.angle += c.speed * dt;
       c.obj.position.x = Math.cos(c.angle) * c.r;

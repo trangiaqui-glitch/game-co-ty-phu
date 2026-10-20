@@ -16,6 +16,7 @@ import { UIManager } from './ui/UIManager.js';
 import { LobbyUI } from './ui/LobbyUI.js';
 import { CharacterPreview } from './ui/CharacterPreview.js';
 import { NetClient } from './net/NetClient.js';
+import { resolveServerBase } from './net/config.js';
 import { OnlineSession } from './online/OnlineSession.js';
 import { CHARACTERS, getCharacter } from './data/characters.js';
 import { applyModelOverrides, PLACEHOLDER_POLICY } from './data/characterConfig.js';
@@ -471,7 +472,7 @@ async function leaveOnlineGame() {
 }
 
 async function initOnline() {
-  const net = new NetClient();
+  const net = new NetClient(resolveServerBase());
   app.net = net;
   const preview = new CharacterPreview(document.getElementById('avatar-canvas'), app.charAssets);
   const lobby = new LobbyUI({ ui, net, characters: CHARACTERS, modelStatus: (id) => app.charAssets.status(id), preview });

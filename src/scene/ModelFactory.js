@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { facadeMaterial, roofMaterial, stoneMaterial, woodMaterial, foliageGeometry, leafMaterial } from './Materials.js';
 
 // ---------------------------------------------------------------------------
 // Bộ dựng mô hình 3D placeholder (nhà, khách sạn, ngân hàng, nhà ga, xe cộ...).
@@ -60,89 +61,126 @@ function block(g, material, x, y, z, w, h, d, rounded = true) {
   return m;
 }
 
-// --------------------------------------------------------------- facade textures
-const facadeCache = new Map();
-function facadeTexture(wall, windowColor = '#BFE6FF', cols = 3, rows = 4, frame = '#ffffff') {
-  const key = `${wall}|${windowColor}|${cols}|${rows}`;
-  if (facadeCache.has(key)) return facadeCache.get(key);
-  const c = document.createElement('canvas');
-  c.width = 128;
-  c.height = 128;
-  const g = c.getContext('2d');
-  g.fillStyle = wall;
-  g.fillRect(0, 0, 128, 128);
-  const pw = 128 / cols;
-  const ph = 128 / rows;
-  for (let i = 0; i < cols; i++) {
-    for (let j = 0; j < rows; j++) {
-      const x = i * pw + pw * 0.2;
-      const y = j * ph + ph * 0.2;
-      g.fillStyle = frame;
-      g.fillRect(x - 2, y - 2, pw * 0.6 + 4, ph * 0.55 + 4);
-      const grad = g.createLinearGradient(x, y, x + pw * 0.6, y + ph * 0.55);
-      grad.addColorStop(0, windowColor);
-      grad.addColorStop(1, '#ffffff');
-      g.fillStyle = grad;
-      g.fillRect(x, y, pw * 0.6, ph * 0.55);
-    }
-  }
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  facadeCache.set(key, tex);
-  return tex;
-}
-
-const facadeMaterials = new Map();
+// --------------------------------------------------------------- facade
+// Mặt tiền PBR (xem Materials.js): tường vữa/gạch, cửa sổ lõm, kính phản chiếu.
 export function facade(wall, opts = {}) {
-  const key = JSON.stringify([wall, opts]);
-  if (!facadeMaterials.has(key)) {
-    const tex = facadeTexture(wall, opts.window, opts.cols, opts.rows, opts.frame);
-    facadeMaterials.set(key, new THREE.MeshStandardMaterial({
-      map: tex, roughness: opts.roughness ?? 0.45, metalness: opts.metalness ?? 0.05,
-    }));
-  }
-  return facadeMaterials.get(key);
+  return facadeMaterial(wall, opts);
 }
 
 // --------------------------------------------------------------- shared pieces
 function door(g, x, z, h = 0.24, color = '#6B3E26') {
-  g.add(part(GEO.rbox(), mat(color), [x, h / 2, z], [0.16, h, 0.04]));
+  const w = 0.16;
+  const wood = woodMaterial(color);
+  const trim = mat('#F4EDE0', { roughness: 0.55 });
+  const dz = z - 0.005;
+  g.add(part(GEO.box(), trim, [x, h / 2 + 0.01, dz + 0.012], [w + 0.045, h + 0.025, 0.02])); // khung cửa
+  g.add(part(GEO.rbox(), wood, [x, h / 2, dz], [w, h, 0.04])); // cánh cửa
+  g.add(part(GEO.box(), mat('#111e2b', { roughness: 0.1, metalness: 0.4 }), [x, h * 0.74, dz - 0.022], [w * 0.55, h * 0.2, 0.004]));
+  g.add(part(GEO.sphere(), gold(), [x + w * 0.32, h * 0.45, dz - 0.026], [0.012, 0.012, 0.012])); // tay nắm
+  g.add(part(GEO.box(), stoneMaterial('#CFC9BF', { repeat: 1 }), [x, 0.012, dz - 0.07], [w + 0.1, 0.024, 0.12])); // bậc thềm
 }
 
 function roofPyramid(g, x, y, z, w, d, h, color) {
-  g.add(part(GEO.pyramid(), mat(color, { roughness: 0.6 }), [x, y + h / 2, z], [w * 0.75, h, d * 0.75]));
+  // Mái ngói + đường viền mái nhô ra (eaves) để có chiều sâu thật.
+  g.add(part(GEO.pyramid(), roofMaterial(color), [x, y + h / 2, z], [w * 0.75, h, d * 0.75]));
+  g.add(part(GEO.box(), mat(color, { roughness: 0.6 }), [x, y + 0.012, z], [w * 1.08, 0.025, d * 1.08]));
 }
 
-export function buildTree(scale = 1, foliage = '#3DBE5C') {
+export function buildTree(scale = 1, foliageColor = '#3DBE5C') {
   const g = new THREE.Group();
-  g.add(part(GEO.cyl(8), mat('#8B5A2B'), [0, 0.18 * scale, 0], [0.06 * scale, 0.36 * scale, 0.06 * scale]));
-  g.add(part(GEO.ico(), mat(foliage, { roughness: 0.7, flatShading: true }), [0, 0.5 * scale, 0], [0.26 * scale, 0.3 * scale, 0.26 * scale]));
-  g.add(part(GEO.ico(), mat(foliage, { roughness: 0.7, flatShading: true }), [0, 0.72 * scale, 0], [0.17 * scale, 0.19 * scale, 0.17 * scale]));
+  const k = scale;
+  const bark = woodMaterial('#6B4A2E');
+  g.add(part(new THREE.CylinderGeometry(0.035, 0.055, 0.42, 9), bark, [0, 0.21 * k, 0], [k, k, k]));
+  g.add(part(new THREE.CylinderGeometry(0.06, 0.085, 0.06, 9), bark, [0, 0.03 * k, 0], [k, k, k]));
+  const mats = new Map();
+  const leaf = (tint) => {
+    if (!mats.has(tint)) {
+      const m = leafMaterial().clone();
+      m.color.set(foliageColor).multiplyScalar(tint);
+      mats.set(tint, m);
+    }
+    return mats.get(tint);
+  };
+  const blobs = [
+    [0, 0.52, 0, 0.27, 0.24, 1.0],
+    [0.14, 0.46, 0.08, 0.17, 0.15, 0.88],
+    [-0.13, 0.48, -0.06, 0.18, 0.16, 0.94],
+    [0.02, 0.7, 0.02, 0.19, 0.17, 1.12],
+    [-0.06, 0.62, 0.13, 0.14, 0.13, 1.05],
+  ];
+  for (const [x, y, z, rx, ry, t] of blobs) {
+    g.add(part(foliageGeometry(), leaf(t), [x * k, y * k, z * k], [rx * k, ry * k, rx * k], [0, x * 9, 0]));
+  }
   return g;
 }
 
+const carBodyGeo = cached('carBody', () => {
+  const sh = new THREE.Shape();
+  sh.moveTo(-0.36, 0.06);
+  sh.lineTo(0.36, 0.06);
+  sh.quadraticCurveTo(0.385, 0.075, 0.385, 0.13); // mũi xe
+  sh.quadraticCurveTo(0.385, 0.17, 0.34, 0.185);
+  sh.lineTo(0.12, 0.21); // nắp capo
+  sh.lineTo(-0.2, 0.21);
+  sh.lineTo(-0.34, 0.2); // cốp
+  sh.quadraticCurveTo(-0.38, 0.19, -0.385, 0.13);
+  sh.quadraticCurveTo(-0.385, 0.075, -0.36, 0.06);
+  const geo = new THREE.ExtrudeGeometry(sh, { depth: 0.3, bevelEnabled: true, bevelSize: 0.022, bevelThickness: 0.022, bevelSegments: 3, curveSegments: 8 });
+  geo.translate(0, 0, -0.15);
+  return geo;
+});
+const carCabinGeo = cached('carCabin', () => {
+  const sh = new THREE.Shape();
+  sh.moveTo(-0.27, 0.205);
+  sh.quadraticCurveTo(-0.2, 0.32, -0.15, 0.335);
+  sh.lineTo(0.0, 0.335);
+  sh.quadraticCurveTo(0.07, 0.3, 0.14, 0.205);
+  sh.closePath();
+  const geo = new THREE.ExtrudeGeometry(sh, { depth: 0.27, bevelEnabled: true, bevelSize: 0.012, bevelThickness: 0.012, bevelSegments: 2, curveSegments: 8 });
+  geo.translate(0, 0, -0.135);
+  return geo;
+});
+const carTireGeo = cached('carTire', () => new THREE.TorusGeometry(0.052, 0.026, 10, 18));
+
 export function buildCar(color = '#E53935', { police = false } = {}) {
   const g = new THREE.Group();
-  const body = mat(color, { roughness: 0.3, metalness: 0.2 });
-  g.add(part(GEO.rbox(), body, [0, 0.16, 0], [0.72, 0.18, 0.36]));
-  g.add(part(GEO.rbox(), police ? mat('#ffffff', { roughness: 0.3 }) : body, [-0.04, 0.3, 0], [0.4, 0.16, 0.32]));
-  g.add(part(GEO.box(), glass('#2a3d55'), [-0.04, 0.3, 0], [0.42, 0.11, 0.3]));
-  const wheel = mat('#1d1d1d', { roughness: 0.8 });
-  const hub = mat('#d9d9d9', { metalness: 0.6, roughness: 0.3 });
-  for (const [x, z] of [[0.22, 0.17], [-0.22, 0.17], [0.22, -0.17], [-0.22, -0.17]]) {
-    g.add(part(GEO.cyl(14), wheel, [x, 0.08, z], [0.08, 0.06, 0.08], [Math.PI / 2, 0, 0]));
-    g.add(part(GEO.cyl(10), hub, [x, 0.08, z + Math.sign(z) * 0.02], [0.035, 0.03, 0.035], [Math.PI / 2, 0, 0]));
+  const paint = new THREE.MeshPhysicalMaterial({ color, roughness: 0.28, metalness: 0.45, clearcoat: 1, clearcoatRoughness: 0.08 });
+  const dark = mat('#1b1b1f', { roughness: 0.7 });
+  const chrome = mat('#E8EAED', { metalness: 1, roughness: 0.12 });
+  g.add(part(carBodyGeo, paint, [0, 0, 0]));
+  g.add(part(carCabinGeo, glass('#243447'), [0, 0, 0]));
+  g.add(part(GEO.rbox(), police ? mat('#ffffff', { roughness: 0.3 }) : paint, [-0.065, 0.338, 0], [0.2, 0.018, 0.275])); // nóc xe
+  if (police) g.add(part(GEO.box(), mat('#ffffff', { roughness: 0.3 }), [0.0, 0.14, 0], [0.5, 0.05, 0.325])); // sọc xe cảnh sát
+  g.add(part(GEO.rbox(), dark, [0.385, 0.095, 0], [0.03, 0.04, 0.31])); // cản trước
+  g.add(part(GEO.rbox(), dark, [-0.39, 0.095, 0], [0.03, 0.04, 0.31])); // cản sau
+  g.add(part(GEO.box(), chrome, [0.397, 0.13, 0], [0.008, 0.03, 0.12])); // lưới tản nhiệt
+  g.add(part(GEO.box(), mat('#ffffff', { roughness: 0.5 }), [-0.405, 0.115, 0], [0.006, 0.035, 0.09])); // biển số
+  const rim = mat('#cfd3d8', { metalness: 0.9, roughness: 0.25 });
+  for (const [x, z] of [[0.24, 0.158], [-0.23, 0.158], [0.24, -0.158], [-0.23, -0.158]]) {
+    const w = new THREE.Group();
+    w.position.set(x, 0.075, z);
+    w.add(part(carTireGeo, dark, [0, 0, 0], [1, 1, 1.15]));
+    w.add(part(GEO.cyl(14), rim, [0, 0, Math.sign(z) * 0.004], [0.05, 0.03, 0.05], [Math.PI / 2, 0, 0]));
+    for (let i = 0; i < 5; i++) {
+      w.add(part(GEO.box(), chrome, [0, 0, Math.sign(z) * 0.02], [0.008, 0.088, 0.004], [0, 0, (i * Math.PI * 2) / 5]));
+    }
+    g.add(w);
   }
-  g.add(part(GEO.sphere(), mat('#FFF6C2', { emissive: '#FFE58A', emissiveIntensity: 0.6 }), [0.36, 0.17, 0.1], [0.03, 0.03, 0.03]));
-  g.add(part(GEO.sphere(), mat('#FFF6C2', { emissive: '#FFE58A', emissiveIntensity: 0.6 }), [0.36, 0.17, -0.1], [0.03, 0.03, 0.03]));
+  const head = mat('#FFF6C2', { emissive: '#FFE58A', emissiveIntensity: 0.8 });
+  const tail = mat('#ff3030', { emissive: '#ff0000', emissiveIntensity: 0.9 });
+  for (const z of [0.105, -0.105]) {
+    g.add(part(GEO.sphere(), head, [0.385, 0.15, z], [0.026, 0.022, 0.03]));
+    g.add(part(GEO.rbox(), tail, [-0.388, 0.15, z], [0.016, 0.026, 0.07]));
+  }
+  for (const z of [0.17, -0.17]) g.add(part(GEO.rbox(), paint, [0.1, 0.225, z], [0.03, 0.025, 0.03])); // gương chiếu hậu
   if (police) {
     const lights = new THREE.Group();
     lights.userData.dynamic = true;
     lights.name = 'policeLights';
     const red = new THREE.MeshStandardMaterial({ color: '#ff3040', emissive: '#ff0020', emissiveIntensity: 1.5 });
     const blue = new THREE.MeshStandardMaterial({ color: '#3070ff', emissive: '#0040ff', emissiveIntensity: 1.5 });
-    lights.add(part(GEO.rbox(), red, [-0.04, 0.4, 0.07], [0.1, 0.05, 0.1]));
-    lights.add(part(GEO.rbox(), blue, [-0.04, 0.4, -0.07], [0.1, 0.05, 0.1]));
+    lights.add(part(GEO.rbox(), red, [-0.065, 0.36, 0.06], [0.06, 0.03, 0.09]));
+    lights.add(part(GEO.rbox(), blue, [-0.065, 0.36, -0.06], [0.06, 0.03, 0.09]));
     lights.userData.materials = [red, blue];
     g.add(lights);
   }
@@ -173,7 +211,7 @@ export function buildTrain(color = '#E53935') {
 const LANDMARK_BUILDERS = {
   brown(g, color, v) {
     const wall = v ? '#F6E0B8' : '#EED3A8';
-    block(g, facade(wall, { cols: 2, rows: 1, window: '#9ad8ff' }), 0, 0, 0, 0.9, 0.5, 0.7);
+    block(g, facade(wall, { cols: 2, rows: 1, window: '#9ad8ff', brick: true }), 0, 0, 0, 0.9, 0.5, 0.7);
     roofPyramid(g, 0, 0.5, 0, 1.05, 0.85, 0.42, color);
     door(g, v ? 0.2 : -0.2, -0.36);
     block(g, mat('#B5651D'), 0.28, 0.6, 0.12, 0.12, 0.28, 0.12);
@@ -217,7 +255,7 @@ const LANDMARK_BUILDERS = {
     if (v) g.add(buildTree(0.7).translateX(0.6).translateZ(0.25));
   },
   green(g, color, v) {
-    const glassMat = facade('#CDEBD6', { cols: 3, rows: 7, window: '#64c98a', frame: '#e8fff0', metalness: 0.3, roughness: 0.2 });
+    const glassMat = facade('#CDEBD6', { cols: 3, rows: 7, window: '#64c98a', frame: '#e8fff0', glassy: true });
     block(g, glassMat, -0.3, 0, 0.05, 0.48, v ? 1.75 : 1.55, 0.6, false);
     block(g, glassMat, 0.32, 0, 0.05, 0.48, v ? 1.45 : 1.8, 0.6, false);
     block(g, mat(color), 0.01, 1.0, 0.05, 0.2, 0.1, 0.3);
@@ -225,7 +263,7 @@ const LANDMARK_BUILDERS = {
     block(g, mat(color), 0.32, v ? 1.45 : 1.8, 0.05, 0.5, 0.06, 0.62);
   },
   darkblue(g, color, v) {
-    const glassMat = facade('#CFE0FF', { cols: 3, rows: 6, window: '#5b8cff', frame: '#eef4ff', metalness: 0.35, roughness: 0.2 });
+    const glassMat = facade('#CFE0FF', { cols: 3, rows: 6, window: '#5b8cff', frame: '#eef4ff', glassy: true });
     const tiers = v ? [[0.86, 0.75], [0.66, 0.65], [0.46, 0.5]] : [[0.8, 0.9], [0.6, 0.7], [0.4, 0.55]];
     let y = 0;
     for (const [w, h] of tiers) {
@@ -253,7 +291,7 @@ export function buildStation() {
   train.position.set(0.25, 0.06, 0.35);
   train.scale.setScalar(0.85);
   g.add(train);
-  block(g, facade('#FFF1D6', { cols: 3, rows: 1, window: '#ffe2a8' }), 0, 0, -0.18, 1.3, 0.48, 0.5);
+  block(g, facade('#D9A27A', { cols: 3, rows: 1, window: '#ffe2a8', brick: true }), 0, 0, -0.18, 1.3, 0.48, 0.5);
   g.add(part(GEO.halfCyl(), mat('#C0392B', { roughness: 0.5 }), [0, 0.48, -0.18], [1.36, 0.28, 0.3]));
   g.add(part(GEO.cyl(24), mat('#ffffff'), [0, 0.62, -0.45], [0.11, 0.03, 0.11], [Math.PI / 2, 0, 0]));
   g.add(part(GEO.box(), mat('#333333'), [0.025, 0.63, -0.47], [0.05, 0.012, 0.01]));
@@ -297,7 +335,7 @@ export function buildUtility(kind) {
 
 export function buildBank(scale = 1) {
   const g = new THREE.Group();
-  const stone = mat('#F5F0E6', { roughness: 0.6 });
+  const stone = stoneMaterial('#F5F0E6', { repeat: 2, roughness: 0.55, veins: true });
   block(g, mat('#D7CCC8'), 0, 0, 0, 1.4, 0.06, 1.0, false);
   block(g, mat('#E0D7CF'), 0, 0.06, 0.05, 1.3, 0.06, 0.9, false);
   block(g, facade('#F5F0E6', { cols: 3, rows: 1, window: '#ffe9a8' }), 0, 0.12, 0.2, 1.1, 0.58, 0.5, false);
@@ -402,7 +440,7 @@ export function buildPark() {
   g.add(part(GEO.cyl(12), mat('#CFD8DC'), [0, 0.25, 0.35], [0.05, 0.3, 0.05]));
   g.add(part(GEO.sphere(), mat('#81D4FA', { roughness: 0.1 }), [0, 0.42, 0.35], [0.08, 0.08, 0.08]));
   for (const [x, z] of [[-1.15, -1.15], [1.15, -1.15], [-1.2, 1.2], [1.2, 1.2]]) g.add(buildTree(1).translateX(x).translateZ(z));
-  const bench = mat('#8D6E63');
+  const bench = woodMaterial('#9A6B45');
   g.add(part(GEO.rbox(), bench, [-0.3, 0.14, -1.1], [0.55, 0.04, 0.16]));
   g.add(part(GEO.rbox(), bench, [-0.3, 0.24, -1.17], [0.55, 0.14, 0.03]));
   const car = buildCar('#29B6F6');

@@ -19,31 +19,63 @@ const FACE_ROT = {
   2: new THREE.Euler(-Math.PI / 2, 0, 0),
   5: new THREE.Euler(Math.PI / 2, 0, 0),
 };
-const SIZE = 0.62;
-const REST = [new THREE.Vector3(-0.55, SIZE / 2 + 0.08, 0.55), new THREE.Vector3(0.6, SIZE / 2 + 0.08, 0.95)];
+const SIZE = 1.0;
+const REST = [new THREE.Vector3(-0.85, SIZE / 2 + 0.08, 0.7), new THREE.Vector3(0.95, SIZE / 2 + 0.08, 1.3)];
+const TEX = 256;
 
-function faceTexture(value) {
+/** Vẽ một mặt xúc xắc: màu ngà có gradient nhẹ, viền mềm, chấm lõm có bóng. `bump` = bản đồ độ cao cho chấm lõm. */
+function faceCanvas(value, bump) {
   const c = document.createElement('canvas');
-  c.width = 128;
-  c.height = 128;
+  c.width = TEX;
+  c.height = TEX;
   const g = c.getContext('2d');
-  g.fillStyle = '#FFFDF7';
-  g.fillRect(0, 0, 128, 128);
+  if (bump) {
+    g.fillStyle = '#fff';
+    g.fillRect(0, 0, TEX, TEX);
+  } else {
+    const bg = g.createRadialGradient(TEX * 0.4, TEX * 0.35, TEX * 0.1, TEX / 2, TEX / 2, TEX * 0.78);
+    bg.addColorStop(0, '#FFFFFF');
+    bg.addColorStop(0.65, '#FFF8E8');
+    bg.addColorStop(1, '#F1E3C6');
+    g.fillStyle = bg;
+    g.fillRect(0, 0, TEX, TEX);
+  }
+  const r = value === 1 ? TEX * 0.15 : TEX * 0.105;
   for (const [x, y] of PIPS[value]) {
+    const cx = x * TEX;
+    const cy = y * TEX;
+    if (bump) {
+      const d = g.createRadialGradient(cx, cy, 0, cx, cy, r);
+      d.addColorStop(0, '#000');
+      d.addColorStop(0.8, '#444');
+      d.addColorStop(1, '#fff');
+      g.fillStyle = d;
+    } else {
+      const red = value === 1;
+      const d = g.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
+      d.addColorStop(0, red ? '#FF6B6B' : '#5B4B86');
+      d.addColorStop(1, red ? '#C62828' : '#1B1432');
+      g.fillStyle = d;
+    }
     g.beginPath();
-    g.arc(x * 128, y * 128, value === 1 ? 17 : 12, 0, Math.PI * 2);
-    g.fillStyle = value === 1 ? '#E53935' : '#2B2340';
+    g.arc(cx, cy, r, 0, Math.PI * 2);
     g.fill();
   }
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
+  return c;
+}
+
+function faceMaterial(value) {
+  const map = new THREE.CanvasTexture(faceCanvas(value, false));
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.anisotropy = 4;
+  const bumpMap = new THREE.CanvasTexture(faceCanvas(value, true));
+  return new THREE.MeshStandardMaterial({ map, bumpMap, bumpScale: 2.2, roughness: 0.25, metalness: 0.03 });
 }
 
 export class DiceView {
   constructor(scene) {
-    const geo = new RoundedBoxGeometry(SIZE, SIZE, SIZE, 4, 0.1);
-    const mats = FACE_VALUES.map((v) => new THREE.MeshStandardMaterial({ map: faceTexture(v), roughness: 0.3, metalness: 0.02 }));
+    const geo = new RoundedBoxGeometry(SIZE, SIZE, SIZE, 6, 0.16);
+    const mats = FACE_VALUES.map(faceMaterial);
     this.dice = [0, 1].map((i) => {
       const m = new THREE.Mesh(geo, mats);
       m.castShadow = true;
@@ -67,8 +99,8 @@ export class DiceView {
     return new Promise((resolve) => {
       const items = this.dice.map((die, i) => {
         const yaw = (Math.random() - 0.5) * 1.2;
-        const end = REST[i].clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.5, 0, (Math.random() - 0.5) * 0.4));
-        const start = new THREE.Vector3(end.x + 2.5 + i * 0.6, 3.6, end.z + 4.2);
+        const end = REST[i].clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.4, 0, (Math.random() - 0.5) * 0.3));
+        const start = new THREE.Vector3(end.x + 3.5 + i * 0.8, 5.2, end.z + 6);
         const spin = new THREE.Vector3(
           (4 + Math.floor(Math.random() * 3)) * Math.PI * (Math.random() < 0.5 ? -1 : 1),
           (2 + Math.floor(Math.random() * 3)) * Math.PI,

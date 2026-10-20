@@ -38,6 +38,15 @@ export function createApi({ dataFile, config } = {}) {
 
   async function handle(req, res, url) {
     if (!url.pathname.startsWith('/api/')) return false;
+    // CORS: cho phép giao diện đặt ở tên miền khác (vd. GitHub Pages) gọi API. Xác thực bằng token, không dùng cookie.
+    res.setHeader('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'content-type, x-token');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204).end();
+      return true;
+    }
     try {
       if (url.pathname === '/api/health') {
         json(res, 200, { ok: true, rooms: hub.rooms.size, online: [...hub.clients.values()].filter((c) => c.streams.size).length });

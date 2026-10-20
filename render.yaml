@@ -1,0 +1,9 @@
+# Deploy máy chủ online lên Render (gói Free): New > Blueprint > chọn repo này.
+services:
+  - type: web
+    name: co-ty-phu-3d
+    runtime: node
+    plan: free
+    buildCommand: echo "Không cần cài gói"
+    startCommand: node server.js
+    healthCheckPath: /api/health
