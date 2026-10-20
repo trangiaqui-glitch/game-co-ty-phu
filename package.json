@@ -1,0 +1,17 @@
+{
+  "name": "co-ty-phu-3d",
+  "version": "1.0.0",
+  "description": "Cờ Tỷ Phú 3D phong cách hoạt hình, chơi online nhiều thiết bị — HTML, CSS, JavaScript ES Modules, Three.js, Node.js",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/simulate.mjs",
+    "test:online": "node tests/online-server-test.mjs",
+    "test:browser": "node tests/browser-smoke.mjs && node tests/character-glb-test.mjs && node tests/online-browser-test.mjs"
+  }
+}

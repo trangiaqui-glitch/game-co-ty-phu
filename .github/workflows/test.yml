@@ -1,0 +1,21 @@
+# Chạy kiểm thử chỉ cần Node (không cần trình duyệt) mỗi khi push hoặc mở pull request.
+# Kiểm thử trình duyệt (npm run test:browser) chạy trên máy có Chrome + GPU; xem README.
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Logic game (60 ván AI + bất biến)
+        run: npm test
+      - name: Máy chủ multiplayer (2 thiết bị giả lập, đồng bộ trạng thái)
+        run: npm run test:online

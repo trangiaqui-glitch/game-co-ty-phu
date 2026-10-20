@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Cờ Tỷ Phú 3D</title>
+  <meta name="description" content="Cờ Tỷ Phú 3D phong cách hoạt hình — Three.js">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='6' width='52' height='52' rx='12' fill='%23fff' stroke='%237a5cff' stroke-width='5'/%3E%3Ccircle cx='22' cy='22' r='5' fill='%232b2340'/%3E%3Ccircle cx='42' cy='42' r='5' fill='%232b2340'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%23e53935'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="scene-container"></div>
+
+  <!-- Màn hình tải -->
+  <div id="loading-screen" class="screen">
+    <div class="loading-card">
+      <div class="logo">CỜ TỶ PHÚ <span>3D</span></div>
+      <div class="loading-coins"><i></i><i></i><i></i></div>
+      <div class="progress"><div class="progress-bar" id="loading-bar"></div></div>
+      <p id="loading-text">Đang khởi tạo...</p>
+      <ul id="loading-details" class="loading-details"></ul>
+    </div>
+  </div>
+
+  <!-- Sảnh chờ online -->
+  <div id="lobby" class="screen lobby hidden">
+    <header class="lobby-top">
+      <div class="logo">CỜ TỶ PHÚ <span>3D</span></div>
+      <div class="lobby-top-right">
+        <span id="net-status" class="net-pill connecting">● Đang kết nối...</span>
+        <span class="coin-pill" title="Xu thưởng từ các ván online">🪙 <b id="lp-coins">0</b></span>
+        <button class="icon-btn small" data-debug-toggle title="Kiểm tra mô hình nhân vật (F2)">🐞</button>
+      </div>
+    </header>
+    <main class="lobby-grid">
+      <section class="lobby-card profile-card">
+        <div class="avatar-stage">
+          <canvas id="avatar-canvas" aria-label="Nhân vật 3D của bạn (kéo để xoay, nhấn để vẫy tay)"></canvas>
+          <span class="lvl-badge" title="Cấp độ">Cấp <b id="lp-level">1</b></span>
+        </div>
+        <input id="lp-name" class="name-input" maxlength="18" aria-label="Tên người chơi" placeholder="Tên của bạn">
+        <small id="lp-char" class="char-line"></small>
+        <div class="xp-bar"><i id="lp-xp"></i></div>
+        <small id="lp-xp-text" class="xp-text"></small>
+        <div class="stats">
+          <div><b id="lp-games">0</b><small>Ván</small></div>
+          <div><b id="lp-wins">0</b><small>Thắng</small></div>
+          <div><b id="lp-rate">–</b><small>Tỉ lệ thắng</small></div>
+        </div>
+        <div class="achievements" id="lp-achievements" aria-label="Thành tích"></div>
+        <button id="btn-choose-char" class="btn">👕 Chọn nhân vật</button>
+      </section>
+
+      <section class="play-card">
+        <button id="btn-quick" class="mega-btn green">▶ CHƠI NGAY<small>Tìm phòng công khai & ghép trận</small></button>
+        <div class="play-row">
+          <button id="btn-create" class="mega-btn blue">➕ TẠO PHÒNG<small>Phòng riêng, mời bạn bè</small></button>
+          <button id="btn-join" class="mega-btn orange">🔑 THAM GIA<small>Nhập mã phòng</small></button>
+        </div>
+        <form id="join-form" class="join-form hidden">
+          <input id="join-code" maxlength="5" autocomplete="off" placeholder="MÃ PHÒNG" aria-label="Mã phòng">
+          <button class="btn btn-primary" type="submit">Vào phòng</button>
+        </form>
+        <div id="rejoin" class="rejoin hidden"></div>
+        <div id="lobby-offline-note" class="offline-note hidden">⚠ Không kết nối được máy chủ online. Hãy chạy game bằng <code>node server.js</code>. Bạn vẫn có thể chơi với máy.</div>
+        <button id="btn-offline" class="mega-btn purple slim">🤖 CHƠI VỚI MÁY<small>Offline, nhiều người chung một thiết bị</small></button>
+      </section>
+
+      <section class="lobby-card side-card">
+        <h3>🟢 Người chơi online <span id="online-count"></span></h3>
+        <ul id="lobby-online-list" class="people-list"></ul>
+        <h3>🚪 Phòng đang chờ</h3>
+        <ul id="lobby-room-list" class="people-list"></ul>
+      </section>
+    </main>
+  </div>
+
+  <!-- Phòng chơi -->
+  <div id="room-screen" class="screen room hidden">
+    <div class="room-card">
+      <header class="room-header">
+        <button id="btn-room-leave" class="btn btn-ghost btn-small">← Rời phòng</button>
+        <div class="room-title">Phòng <b id="room-code" class="code-big"></b> <span id="room-visibility" class="tag"></span></div>
+        <button id="btn-copy-link" class="btn btn-small">🔗 Sao chép link mời</button>
+      </header>
+      <div id="room-seats" class="room-seats"></div>
+      <p id="room-hint" class="room-hint"></p>
+      <p id="room-playing" class="room-hint hidden">Ván đấu đang diễn ra...</p>
+      <div id="room-result" class="room-result" hidden></div>
+      <div class="room-bottom">
+        <div class="room-settings">
+          <h4>⚙ Cài đặt phòng</h4>
+          <label>Tiền khởi điểm
+            <select id="room-money"><option value="1500">$1,500</option><option value="2000">$2,000</option><option value="2500">$2,500</option></select>
+          </label>
+          <label>Giới hạn vòng
+            <select id="room-rounds"><option value="0">Không giới hạn</option><option value="15">15 vòng</option><option value="30">30 vòng</option><option value="50">50 vòng</option></select>
+          </label>
+          <label class="check"><input type="checkbox" id="room-public"> Phòng công khai (ai cũng ghép vào được)</label>
+        </div>
+        <div class="room-invite">
+          <h4>📨 Mời bạn đang online</h4>
+          <ul id="invite-list" class="people-list"></ul>
+        </div>
+      </div>
+      <div class="room-actions">
+        <button id="btn-ready" class="btn btn-xl">✋ Sẵn sàng</button>
+        <button id="btn-room-start" class="btn btn-primary btn-xl">🎲 Bắt đầu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Menu bắt đầu (chơi với máy / chung một thiết bị) -->
+  <div id="start-menu" class="screen hidden">
+    <div class="menu-card">
+      <header class="menu-header">
+        <button id="btn-menu-lobby" class="btn btn-ghost btn-small back-lobby">← Về sảnh</button>
+        <div class="logo">CỜ TỶ PHÚ <span>3D</span></div>
+        <p>Chơi với máy hoặc nhiều người chung một thiết bị.</p>
+      </header>
+
+      <section>
+        <h3>Số người chơi</h3>
+        <div class="segmented" id="player-count">
+          <button data-count="2">2 người</button>
+          <button data-count="3">3 người</button>
+          <button data-count="4">4 người</button>
+        </div>
+      </section>
+
+      <section>
+        <h3>Người chơi <small>(nhấn ảnh để đổi nhân vật)</small></h3>
+        <div id="player-setup" class="player-setup"></div>
+        <div id="model-warning" class="model-warning hidden"></div>
+        <div class="model-options">
+          <label class="check"><input type="checkbox" id="opt-placeholder" checked> Cho phép mô hình tạm (khối hình học) cho nhân vật chưa có GLB</label>
+          <button class="btn btn-small btn-ghost" data-debug-toggle title="Xem trạng thái mô hình nhân vật (F2)">🐞 Kiểm tra mô hình</button>
+        </div>
+      </section>
+
+      <section class="settings-grid">
+        <label>Tiền khởi điểm
+          <select id="opt-money">
+            <option value="1500">$1,500</option>
+            <option value="2000">$2,000</option>
+            <option value="2500">$2,500</option>
+          </select>
+        </label>
+        <label>Giới hạn vòng
+          <select id="opt-rounds">
+            <option value="0">Không giới hạn</option>
+            <option value="15">15 vòng</option>
+            <option value="30">30 vòng</option>
+            <option value="50">50 vòng</option>
+          </select>
+        </label>
+        <label>Chất lượng đồ hoạ
+          <select id="opt-quality">
+            <option value="high">Cao (bóng đổ đẹp)</option>
+            <option value="medium">Trung bình</option>
+            <option value="low">Thấp (máy yếu)</option>
+          </select>
+        </label>
+        <label>Tốc độ hoạt ảnh
+          <select id="opt-speed">
+            <option value="1">Bình thường</option>
+            <option value="1.5">Nhanh</option>
+            <option value="2.2">Rất nhanh</option>
+          </select>
+        </label>
+      </section>
+
+      <details class="rules">
+        <summary>📖 Luật chơi tóm tắt</summary>
+        <ul>
+          <li>Mỗi lượt tung 2 xúc xắc và đi số ô tương ứng. Tung được đôi thì tung tiếp; 3 lần đôi liên tiếp phải vào tù.</li>
+          <li>Đi qua ô <b>Bắt đầu</b> nhận $200. Đến đất chưa có chủ có thể mua; đến đất của người khác phải trả tiền thuê.</li>
+          <li>Sở hữu cả nhóm màu thì tiền thuê gấp đôi và được xây nhà (xây đều), 4 nhà nâng thành khách sạn.</li>
+          <li>Thiếu tiền, tài sản sẽ tự động được thế chấp / bán nhà. Vẫn không đủ thì phá sản.</li>
+          <li>Trong tù: trả $50, dùng thẻ hoặc tung đôi để ra. Sau 3 lượt buộc phải trả $50.</li>
+          <li>Người cuối cùng chưa phá sản (hoặc giàu nhất khi hết số vòng giới hạn) chiến thắng.</li>
+          <li>Phím tắt: <kbd>Space</kbd> tung · <kbd>B</kbd> mua · <kbd>H</kbd> xây · <kbd>E</kbd> kết thúc lượt · <kbd>C</kbd> camera.</li>
+        </ul>
+      </details>
+
+      <button id="btn-start" class="btn btn-primary btn-xl">🎲 Bắt đầu chơi</button>
+    </div>
+  </div>
+
+  <!-- HUD trong game -->
+  <div id="hud" class="hidden">
+    <aside id="players-panel"></aside>
+
+    <div id="top-bar">
+      <div id="turn-badge"></div>
+      <div class="icon-group">
+        <button class="icon-btn" id="btn-cam-reset" title="Đưa camera về góc nhìn mặc định (C)">🎥</button>
+        <button class="icon-btn toggle active" id="btn-follow" title="Camera theo dõi nhân vật">👣</button>
+        <button class="icon-btn" id="btn-leaderboard" title="Bảng xếp hạng">🏆</button>
+        <button class="icon-btn" id="btn-log" title="Nhật ký giao dịch">📜</button>
+        <button class="icon-btn" data-debug-toggle title="Debug nhân vật (F2)">🐞</button>
+        <button class="icon-btn" id="btn-menu" title="Ván mới / rời ván">☰</button>
+      </div>
+    </div>
+
+    <div id="action-area">
+      <div id="prompt" class="hidden"></div>
+      <div id="action-bar">
+        <div id="dice-display" title="Kết quả xúc xắc"><span class="die">–</span><span class="die">–</span><span class="dice-sum"></span></div>
+        <button class="btn btn-roll" id="btn-roll">🎲 Tung xúc xắc</button>
+        <button class="btn btn-buy" id="btn-buy">🏠 Mua đất</button>
+        <button class="btn btn-build" id="btn-build">🔨 Xây nhà</button>
+        <button class="btn btn-end" id="btn-end">⏭ Kết thúc lượt</button>
+      </div>
+    </div>
+
+    <aside id="tile-panel" class="panel hidden"></aside>
+
+    <aside id="log-panel" class="panel">
+      <div class="tabs">
+        <button data-tab="events" class="active">Sự kiện</button>
+        <button data-tab="tx">Giao dịch</button>
+        <button class="collapse" id="btn-log-collapse" title="Thu gọn">▾</button>
+      </div>
+      <ul id="log-list" class="log-list"></ul>
+      <ul id="tx-list" class="log-list tx hidden"></ul>
+    </aside>
+  </div>
+
+  <div id="banner" class="banner"></div>
+  <div id="modal-root"></div>
+  <div id="toast-root"></div>
+  <div id="float-layer"></div>
+
+  <noscript>Trò chơi cần bật JavaScript.</noscript>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

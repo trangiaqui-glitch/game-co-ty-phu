@@ -1,0 +1,7 @@
+{
+  "_comment": "Khai báo mô hình GLB cho công trình/đạo cụ (thay placeholder). Mô hình NHÂN VẬT được cấu hình trong src/data/characterConfig.js, không khai báo ở đây. Xem README.md để biết danh sách khoá.",
+  "buildings": {
+    "_keys": "landmark_brown, landmark_lightblue, landmark_pink, landmark_orange, landmark_red, landmark_yellow, landmark_green, landmark_darkblue, station, utility_electric, utility_water, bank, start, jail, park, gotojail, chance, community, tax_income, tax_luxury"
+  },
+  "props": {}
+}
